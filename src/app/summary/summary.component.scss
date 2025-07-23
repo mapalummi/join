@@ -343,7 +343,8 @@ section {
     .greeting-container {
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-start;
+      margin-top: 150px;
 
       @media (max-width: 1215px) {
         display: none;
