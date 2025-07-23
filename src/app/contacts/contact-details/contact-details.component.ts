@@ -41,7 +41,7 @@ import { map } from 'rxjs/operators';
           style({ transform: 'translateX(0%)', opacity: 1 })
         ),
       ]),
-    ],),
+    ]),
     trigger('slideInOut', [
       transition(':enter', [
         style({ transform: 'translateX(100%)', opacity: 0 }),
@@ -59,7 +59,6 @@ import { map } from 'rxjs/operators';
     ]),
   ],
 })
-
 export class ContactDetailsComponent implements OnInit, OnDestroy {
   contactVisible = false;
   contact?: Contact;
@@ -77,7 +76,7 @@ export class ContactDetailsComponent implements OnInit, OnDestroy {
   constructor(
     private contactService: ContactService,
     private elementRef: ElementRef
-  ) { }
+  ) {}
 
   /**
    * Triggered when clicking outside the mobile menu.
@@ -88,8 +87,11 @@ export class ContactDetailsComponent implements OnInit, OnDestroy {
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event) {
     const target = event.target as HTMLElement;
-    const mobileMenu = this.elementRef.nativeElement.querySelector('.mobile-menu');
-    const mobileOptions = this.elementRef.nativeElement.querySelector('.mobile-options-btn');
+    const mobileMenu =
+      this.elementRef.nativeElement.querySelector('.mobile-menu');
+    const mobileOptions = this.elementRef.nativeElement.querySelector(
+      '.mobile-options-btn'
+    );
     if (
       this.menuOpen &&
       !mobileMenu?.contains(target) &&
@@ -149,7 +151,9 @@ export class ContactDetailsComponent implements OnInit, OnDestroy {
       this.contactService.selectedContact$,
       this.contactService.getContacts(),
     ])
-      .pipe(map(([selected, all]) => this.resolveSelectedContact(selected, all)))
+      .pipe(
+        map(([selected, all]) => this.resolveSelectedContact(selected, all))
+      )
       .subscribe({
         next: (contact) => this.handleContactChange(contact),
       });
@@ -206,16 +210,29 @@ export class ContactDetailsComponent implements OnInit, OnDestroy {
    *
    * @param wasEmpty - Indicates if the previous contact was undefined.
    */
+  // private prepareContactTransition(wasEmpty: boolean): void {
+  //   this.isEditing = false;
+  //   if (!this.isDeleting && (this.firstLoad || wasEmpty)) {
+  //     this.contactVisible = false;
+  //     setTimeout(() => {
+  //       this.contactVisible = true;
+  //       this.animationState++;
+  //       this.firstLoad = false;
+  //     }, 10);
+  //   }
+  // }
+
+  //NOTE:
+  //Geänderte Funktion
   private prepareContactTransition(wasEmpty: boolean): void {
     this.isEditing = false;
-    if (!this.isDeleting && (this.firstLoad || wasEmpty)) {
-      this.contactVisible = false;
-      setTimeout(() => {
-        this.contactVisible = true;
-        this.animationState++;
-        this.firstLoad = false;
-      }, 10);
-    }
+    // Animation immer triggern, wenn Kontakt gewechselt wird
+    this.contactVisible = false;
+    setTimeout(() => {
+      this.contactVisible = true;
+      this.animationState++;
+      this.firstLoad = false;
+    }, 10);
   }
 
   /**
