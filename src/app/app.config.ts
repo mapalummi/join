@@ -13,12 +13,12 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withHashLocation()),
     provideFirebaseApp(() =>
       initializeApp({
-        projectId: 'join-6125f',
-        appId: '1:703986298510:web:8cb9707daf583f2153a3df',
-        storageBucket: 'join-6125f.firebasestorage.app',
-        apiKey: 'AIzaSyAWyoU260eXmo3445mLTsqCjzRhEG6aq9A',
-        authDomain: 'join-6125f.firebaseapp.com',
-        messagingSenderId: '703986298510',
+        apiKey: 'AIzaSyCkJrwMFxT8a81j973vBGTWRR-iON7YLd4',
+        authDomain: 'join-7e312.firebaseapp.com',
+        projectId: 'join-7e312',
+        storageBucket: 'join-7e312.firebasestorage.app',
+        messagingSenderId: '435660815279',
+        appId: '1:435660815279:web:a2aa5ccfbf2f145a3b8d5a',
       })
     ),
     provideFirestore(() => getFirestore()),
@@ -30,7 +30,7 @@ export const appConfig: ApplicationConfig = {
         dragStartThreshold: 5,
         pointerDirectionChangeThreshold: 5,
         zIndex: 1000,
-        scrollSpeed: 30,          
+        scrollSpeed: 30,
         scrollProximity: 100,
       },
     },
