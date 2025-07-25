@@ -210,6 +210,7 @@ export class ContactDetailsComponent implements OnInit, OnDestroy {
    *
    * @param wasEmpty - Indicates if the previous contact was undefined.
    */
+  
   // private prepareContactTransition(wasEmpty: boolean): void {
   //   this.isEditing = false;
   //   if (!this.isDeleting && (this.firstLoad || wasEmpty)) {
