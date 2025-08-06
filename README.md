@@ -3,39 +3,39 @@
 Welcome to **JOIN** – your modern task manager project!
 
 
-## 🚀 Overview
+## 📄 Overview
 
 **Join** is a modern web application for managing and organizing tasks, inspired by the Kanban system. With Join, you can plan your projects clearly, create tasks, move them between stages, and track progress in real time. This project was built using Angular CLI version 19.2.12 and leverages Firebase for authentication and data storage.
 
 
-## 🚀 Live Demo  
+## 🌐 Live Demo  
 Try Join for yourself: [https://join.marcopalummieri.de](https://join.marcopalummieri.de)
 
 
 ## ✨ Features
 
-- **User Authentication**  
+- 🔐 **User Authentication**  
   Register a new account, log in, or use the guest access to get started right away.
 
-- **Dynamic Task Board**  
+- 🧩 **Dynamic Task Board**  
   Organize your tasks across four default lists: To Do, In Progress, Awaiting Feedback, and Done.
 
-- **Overview Dashboard**  
+- 📊 **Overview Dashboard**  
   Keep all critical tasks and upcoming deadlines in view with the summary board.
 
-- **Contact Management**  
+- 👥 **Contact Management**  
   Add, edit, and manage contacts to collaborate effectively on your projects.
 
-- **Single-Page Navigation**  
+- 🧭 **Single-Page Navigation**  
   Enjoy fast and intuitive routing within the application.
 
-- **Help Section**  
+- 📘 **Help Section**  
   Access detailed guidance on how to make the most of Join.
 
-- **Legal & Privacy**  
+- ⚖️ **Legal & Privacy**  
   Clear pages for Impressum and Privacy Policy.
 
-- **Real-Time Data**  
+- ☁️ **Real-Time Data**  
   All tasks and user information are securely stored in Firestore.
 
 
@@ -43,7 +43,7 @@ Try Join for yourself: [https://join.marcopalummieri.de](https://join.marcopalum
 _Add your screenshots here (mobile and desktop views)._
 
 
-## ⚙️ Technologies Used
+## 🛠️ Technologies Used
 
 - Angular 19.2  
 - TypeScript  
@@ -52,7 +52,7 @@ _Add your screenshots here (mobile and desktop views)._
 - Angular Material CDKs for Drag & Drop functionality
 
 
-## 🚀 Installation
+## 📦 Installation
 
 ```bash
 # Clone the repository
@@ -69,7 +69,7 @@ npm start
 ```
 
 
-## 🚩 Code Scaffolding with Angular CLI
+## 🧱 Code Scaffolding with Angular CLI
 
 You can use [Angular CLI](https://angular.io/cli) to generate components, directives, pipes, and more:
 
@@ -81,10 +81,10 @@ ng generate service service-name
 ng generate module module-name
 ```
 
-For a full list of Angular CLI commands, visit the [Angular CLI documentation](https://angular.io/cli).
+📚 For a full list of Angular CLI commands, visit the [Angular CLI documentation](https://angular.io/cli).
 
 
-## 🔨 Building for Production
+## 🚀 Building for Production
 
 To build the app for production, run:
 
@@ -103,11 +103,11 @@ Use the `--prod` flag for optimized production builds.
 - [ ] 🔔 Notifications & reminders  
 
 
-## 📝 Contributing
+## 🤝 Contributing
 
 Want to contribute? Great! Just create an issue or open a pull request.
 
 
-## 🤓 About the Developer
+## 👨‍💻 About the Developer
 
 This project was created by **Marco Palummieri**. If you enjoy using Join, please give it a ⭐️ on GitHub or contribute!
