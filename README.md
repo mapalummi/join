@@ -40,7 +40,7 @@ Try Join for yourself: [https://join.marcopalummieri.de](https://join.marcopalum
 
 
 ## 📸 Screenshots  
-_Add your screenshots here (mobile and desktop views)._
+
 
 
 ## 🛠️ Technologies Used
