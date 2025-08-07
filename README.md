@@ -1,3 +1,7 @@
+
+
+<img width="172" height="176" alt="Screenshot 2025-08-07 204147" src="https://github.com/user-attachments/assets/9d17424f-1005-4e35-9b58-83646e85b109" />
+
 # JOIN
 
 Welcome to **JOIN** – your modern task manager project!
@@ -41,6 +45,16 @@ Try Join for yourself: [https://join.marcopalummieri.de](https://join.marcopalum
 
 ## 📸 Screenshots  
 
+Mobile
+
+<img width="428" height="928" alt="Screenshot 2025-08-07 204435" src="https://github.com/user-attachments/assets/8f190019-e1d6-4c3b-a39a-76e4ac58b68c" />
+<img width="432" height="933" alt="Screenshot 2025-08-07 204520" src="https://github.com/user-attachments/assets/d8d1fa3e-27a0-47ba-8590-7cb5b5f038e2" />
+<img width="429" height="931" alt="Screenshot 2025-08-07 204554" src="https://github.com/user-attachments/assets/21d2335c-6646-496d-80c0-97df6e98c2a8" />
+
+
+Desktop
+
+<img width="1640" height="1015" alt="Screenshot 2025-08-07 204324" src="https://github.com/user-attachments/assets/0330a568-7de8-40fe-84c9-1d816449c9be" />
 
 
 ## 🛠️ Technologies Used
