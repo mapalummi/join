@@ -45,10 +45,7 @@ Try Join for yourself: [https://join.marcopalummieri.de](https://join.marcopalum
 
 Mobile
 
-<img width="428" height="928" alt="Screenshot 2025-08-07 204435" src="https://github.com/user-attachments/assets/8f190019-e1d6-4c3b-a39a-76e4ac58b68c" />
-<img width="432" height="933" alt="Screenshot 2025-08-07 204520" src="https://github.com/user-attachments/assets/d8d1fa3e-27a0-47ba-8590-7cb5b5f038e2" />
-<img width="429" height="931" alt="Screenshot 2025-08-07 204554" src="https://github.com/user-attachments/assets/21d2335c-6646-496d-80c0-97df6e98c2a8" />
-
+<img width="1228" height="876" alt="Screenshot 2025-08-07 210322" src="https://github.com/user-attachments/assets/38bca50e-b526-496e-bfde-019fd33137f6" />
 
 Desktop
 
