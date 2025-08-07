@@ -68,7 +68,7 @@ export class ContactFormComponent implements OnInit, OnDestroy {
     this.contactForm = this.form.group({
       name: ['', [Validators.required, notOnlyWhitespace]],
       email: ['', [Validators.required, Validators.email]],
-      phone: ['', [Validators.required, Validators.min(10), Validators.pattern(/^\d+$/)]]
+      phone: ['', [Validators.required, Validators.minLength(10), Validators.pattern(/^[\+\d\s\-\(\)]+$/)]]
     });
     this.editContactSubscription = this.contactService.editContact$.subscribe(this.getDataToEdit);
   }
