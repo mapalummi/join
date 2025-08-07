@@ -2,8 +2,6 @@
 
 <img width="172" height="176" alt="Screenshot 2025-08-07 204147" src="https://github.com/user-attachments/assets/9d17424f-1005-4e35-9b58-83646e85b109" />
 
-# JOIN
-
 Welcome to **JOIN** – your modern task manager project!
 
 
