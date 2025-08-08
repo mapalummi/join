@@ -34,7 +34,9 @@ export interface Contact {
  * @param control - The form control to validate.
  * @returns A validation error object if invalid, otherwise null.
  */
-export function notOnlyWhitespace(control: AbstractControl): ValidationErrors | null {
+export function notOnlyWhitespace(
+  control: AbstractControl
+): ValidationErrors | null {
   const value = control.value;
   if (typeof value === 'string' && value.trim().length === 0) {
     return { whitespace: true };
@@ -49,7 +51,6 @@ export function notOnlyWhitespace(control: AbstractControl): ValidationErrors | 
 @Injectable({
   providedIn: 'root',
 })
-
 export class ContactService {
   /** Currently selected contact (for viewing or interaction) */
   private selectedContactSubject = new BehaviorSubject<Contact | null>(null);
@@ -65,23 +66,47 @@ export class ContactService {
   public editContact$ = this.editContactSubject.asObservable();
   /** Preset avatar colors for visual identification */
   private avatarColors = [
-    '#9C27B0', '#2196F3', '#FF9800', '#4CAF50', '#F44336', '#00BCD4',
-    '#c44314ff', '#5191daff', '#E91E63', '#3F51B5', '#b3c511ff',
-    '#FF5722', '#388E3C', '#1976D2', '#5c0582ff', '#c90d0dff',
-    '#c303aaff', '#0118acff', '#0288D1', '#C2185B', '#049484ff',
-    '#FFA000', '#084c6bff', '#6bb604ff'
+    '#9C27B0',
+    '#2196F3',
+    '#FF9800',
+    '#4CAF50',
+    '#F44336',
+    '#00BCD4',
+    '#c44314ff',
+    '#5191daff',
+    '#E91E63',
+    '#3F51B5',
+    '#b3c511ff',
+    '#FF5722',
+    '#388E3C',
+    '#1976D2',
+    '#5c0582ff',
+    '#c90d0dff',
+    '#c303aaff',
+    '#0118acff',
+    '#0288D1',
+    '#C2185B',
+    '#049484ff',
+    '#FFA000',
+    '#084c6bff',
+    '#6bb604ff',
   ];
 
-  constructor(
-    private firestore: Firestore,
-    private authService: AuthService
-  ) {}
+  constructor(private firestore: Firestore, private authService: AuthService) {}
 
   /**
    * Returns a Firestore reference to the `contacts` collection.
    */
+  // getContactsRef() {
+  //   return collection(this.firestore, 'contacts');
+  // }
+
+  /**
+   * Returns a reference to the user-specific contacts collection.
+   */
   getContactsRef() {
-    return collection(this.firestore, 'contacts');
+    const collectionName = this.authService.getCollectionName('contacts');
+    return collection(this.firestore, collectionName);
   }
 
   /**
@@ -98,11 +123,33 @@ export class ContactService {
    *
    * @returns Observable of Contact array.
    */
+  // getContacts(): Observable<Contact[]> {
+  //   return new Observable((observer) => {
+  //     const contactsRef = this.getContactsRef();
+  //     const unsubscribe = onSnapshot(
+  //       contactsRef,
+  //       (snapshot) => {
+  //         const contacts: Contact[] = [];
+  //         snapshot.forEach((doc) => {
+  //           contacts.push({ id: doc.id, ...doc.data() } as Contact);
+  //         });
+  //         observer.next(contacts);
+  //       },
+  //       (error) => {
+  //         observer.error(error);
+  //       }
+  //     );
+  //     return () => unsubscribe();
+  //   });
+  // }
+
+  /**
+   * Observes all contacts for the current user type.
+   */
   getContacts(): Observable<Contact[]> {
     return new Observable((observer) => {
-      const contactsRef = this.getContactsRef();
       const unsubscribe = onSnapshot(
-        contactsRef,
+        this.getContactsRef(),
         (snapshot) => {
           const contacts: Contact[] = [];
           snapshot.forEach((doc) => {
@@ -110,10 +157,9 @@ export class ContactService {
           });
           observer.next(contacts);
         },
-        (error) => {
-          observer.error(error);
-        }
+        (error) => observer.error(error)
       );
+
       return () => unsubscribe();
     });
   }
@@ -124,14 +170,28 @@ export class ContactService {
    * @param newContact - The contact to add.
    * @returns The added contact with its generated ID or null if failed.
    */
+  // async addContact(newContact: Contact): Promise<Contact | null> {
+  //   try {
+  //     const contactsRef = this.getContactsRef();
+  //     const docRef = await addDoc(contactsRef, newContact);
+  //     const fullContact: Contact = { id: docRef.id, ...newContact };
+  //     return fullContact;
+  //   } catch (err) {
+  //     console.error(err);
+  //     return null;
+  //   }
+  // }
+
+  /**
+   * Adds a new contact to the user-specific collection.
+   */
   async addContact(newContact: Contact): Promise<Contact | null> {
     try {
       const contactsRef = this.getContactsRef();
       const docRef = await addDoc(contactsRef, newContact);
-      const fullContact: Contact = { id: docRef.id, ...newContact };
-      return fullContact;
-    } catch (err) {
-      console.error(err);
+      return { id: docRef.id, ...newContact };
+    } catch (error) {
+      console.error('Error adding contact:', error);
       return null;
     }
   }
@@ -252,7 +312,7 @@ export class ContactService {
    */
   async getContactById(contactId: string): Promise<Contact | null> {
     const contactRef = this.getSingleContactsRef(contactId);
-    return getDoc(contactRef).then(snapshot => {
+    return getDoc(contactRef).then((snapshot) => {
       if (snapshot.exists()) {
         return { id: snapshot.id, ...snapshot.data() } as Contact;
       }

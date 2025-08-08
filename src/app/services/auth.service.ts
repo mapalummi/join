@@ -1,20 +1,20 @@
 import { Injectable } from '@angular/core';
-import { 
-  Auth, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut, 
+import {
+  Auth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
   User,
   onAuthStateChanged,
   updateProfile,
-  deleteUser
+  deleteUser,
 } from '@angular/fire/auth';
-import { 
-  Firestore, 
-  doc, 
-  setDoc, 
-  getDoc, 
-  DocumentData 
+import {
+  Firestore,
+  doc,
+  setDoc,
+  getDoc,
+  DocumentData,
 } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
@@ -34,9 +34,8 @@ export interface UserData {
  * guest access, profile updates, account deletion, and state tracking.
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
-
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   private authInitialized = new BehaviorSubject<boolean>(false);
@@ -44,12 +43,14 @@ export class AuthService {
   /**
    * Observable emitting the current authenticated Firebase user.
    */
-  public currentUser$: Observable<User | null> = this.currentUserSubject.asObservable();
-  
+  public currentUser$: Observable<User | null> =
+    this.currentUserSubject.asObservable();
+
   /**
    * Observable that emits true once Firebase Auth has finished initializing.
    */
-  public authInitialized$: Observable<boolean> = this.authInitialized.asObservable();
+  public authInitialized$: Observable<boolean> =
+    this.authInitialized.asObservable();
 
   /**
    * Initializes the AuthService and subscribes to authentication state changes.
@@ -78,16 +79,24 @@ export class AuthService {
    * @param displayName - User's display name
    * @returns A success status and optional error message
    */
-  async signUp(email: string, password: string, displayName: string): Promise<{ success: boolean; message?: string }> {
+  async signUp(
+    email: string,
+    password: string,
+    displayName: string
+  ): Promise<{ success: boolean; message?: string }> {
     try {
-      const userCredential = await createUserWithEmailAndPassword(this.auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(
+        this.auth,
+        email,
+        password
+      );
       const user = userCredential.user;
       await updateProfile(user, { displayName });
       const userData: UserData = {
         uid: user.uid,
         email: user.email!,
         displayName: displayName,
-        createdAt: new Date()
+        createdAt: new Date(),
       };
       await setDoc(doc(this.firestore, 'users', user.uid), userData);
       return { success: true };
@@ -102,7 +111,10 @@ export class AuthService {
    * @param password - User's password
    * @returns A success status and optional error message
    */
-  async signIn(email: string, password: string): Promise<{ success: boolean; message?: string }> {
+  async signIn(
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; message?: string }> {
     try {
       await signInWithEmailAndPassword(this.auth, email, password);
       return { success: true };
@@ -123,19 +135,26 @@ export class AuthService {
       return { success: true };
     } catch (error: any) {
       try {
-        const userCredential = await createUserWithEmailAndPassword(this.auth, 'guest@join.com', 'Guest123!');
+        const userCredential = await createUserWithEmailAndPassword(
+          this.auth,
+          'guest@join.com',
+          'Guest123!'
+        );
         const user = userCredential.user;
         await updateProfile(user, { displayName: 'Guest User' });
         const userData: UserData = {
           uid: user.uid,
           email: user.email!,
           displayName: 'Guest User',
-          createdAt: new Date()
+          createdAt: new Date(),
         };
         await setDoc(doc(this.firestore, 'users', user.uid), userData);
         return { success: true };
       } catch (createError: any) {
-        return { success: false, message: this.getErrorMessage(createError.code) };
+        return {
+          success: false,
+          message: this.getErrorMessage(createError.code),
+        };
       }
     }
   }
@@ -156,7 +175,7 @@ export class AuthService {
     const currentUser = this.auth.currentUser;
     if (!currentUser) return null;
     const userDoc = await getDoc(doc(this.firestore, 'users', currentUser.uid));
-    return userDoc.exists() ? userDoc.data() as UserData : null;
+    return userDoc.exists() ? (userDoc.data() as UserData) : null;
   }
 
   /**
@@ -218,5 +237,28 @@ export class AuthService {
     } catch (error: any) {
       return { success: false, message: this.getErrorMessage(error.code) };
     }
+  }
+
+  // NEUE BEFEHLE:
+
+  /**
+   * Checks if the current user is a guest user.
+   * @returns True if the current user is a guest, false otherwise
+   */
+  isGuestUser(): boolean {
+    const currentUser = this.auth.currentUser;
+    return currentUser?.email === 'guest@join.com';
+  }
+
+  /**
+   * Gets the user-specific collection name.
+   * @param baseCollection - The base collection name (e.g., 'tasks', 'contacts')
+   * @returns The collection name - 'dummy-{collection}' for guests, '{collection}' for users
+   */
+  getCollectionName(baseCollection: string): string {
+    if (this.isGuestUser()) {
+      return `dummy-${baseCollection}`;
+    }
+    return baseCollection; // Normale Collections für registrierte User
   }
 }

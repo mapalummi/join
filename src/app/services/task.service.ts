@@ -7,9 +7,10 @@ import {
   doc,
   updateDoc,
   deleteDoc,
-  Timestamp
+  Timestamp,
 } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { AuthService } from './auth.service';
 
 /**
  * Represents a task in the system.
@@ -65,24 +66,33 @@ export interface Subtask {
  * stored in Firestore.
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
-
 export class TaskService {
   private editingTask: Task | null = null;
 
-  constructor(private firestore: Firestore) {}
+  // NEU Änderung hier:
+  constructor(private firestore: Firestore, private authService: AuthService) {}
 
   /**
    * Returns a reference to the 'tasks' Firestore collection.
    */
+  // getTasksRef() {
+  //   return collection(this.firestore, 'tasks');
+  // }
+
+  // NEU:
+  /**
+   * Returns a reference to the user-specific tasks collection.
+   */
   getTasksRef() {
-    return collection(this.firestore, 'tasks');
+    const collectionName = this.authService.getCollectionName('tasks');
+    return collection(this.firestore, collectionName);
   }
 
   /**
    * Returns a reference to the 'subtasks' subcollection for a given task.
-   * 
+   *
    * @param subColId - The document ID of the parent task.
    */
   getSubtasksRef(subColId: string) {
@@ -91,27 +101,36 @@ export class TaskService {
 
   /**
    * Returns a document reference for a specific task by ID.
-   * 
+   *
    * @param docId - The document ID of the task.
    */
+  // getSingleTaskRef(docId: string) {
+  //   return doc(collection(this.firestore, 'tasks'), docId);
+  // }
+
   getSingleTaskRef(docId: string) {
-    return doc(collection(this.firestore, 'tasks'), docId);
+    const collectionName = this.authService.getCollectionName('tasks');
+    return doc(collection(this.firestore, collectionName), docId);
   }
 
   /**
    * Observes all tasks in Firestore and emits updates in real-time.
    */
   getTasks(): Observable<Task[]> {
-    return new Observable(observer => {
-      const unsubscribe = onSnapshot(this.getTasksRef(), snapshot => {
-        const tasks: Task[] = [];
-        snapshot.forEach(doc => {
-          tasks.push({ id: doc.id, ...doc.data() } as Task);
-        });
-        observer.next(tasks);
-      }, error => {
-        observer.error(error);
-      });
+    return new Observable((observer) => {
+      const unsubscribe = onSnapshot(
+        this.getTasksRef(),
+        (snapshot) => {
+          const tasks: Task[] = [];
+          snapshot.forEach((doc) => {
+            tasks.push({ id: doc.id, ...doc.data() } as Task);
+          });
+          observer.next(tasks);
+        },
+        (error) => {
+          observer.error(error);
+        }
+      );
 
       return () => unsubscribe();
     });
@@ -119,18 +138,22 @@ export class TaskService {
 
   /**
    * Observes the subtasks of a given task in real-time.
-   * 
+   *
    * @param taskId - The ID of the parent task.
    */
   getSubtasks(taskId: string): Observable<Subtask[]> {
-    return new Observable(observer => {
-      const unsubscribe = onSnapshot(this.getSubtasksRef(taskId), snapshot => {
-        const subtasks: Subtask[] = [];
-        snapshot.forEach(doc => {
-          subtasks.push({ id: doc.id, ...doc.data() } as Subtask);
-        });
-        observer.next(subtasks);
-      }, error => observer.error(error));
+    return new Observable((observer) => {
+      const unsubscribe = onSnapshot(
+        this.getSubtasksRef(taskId),
+        (snapshot) => {
+          const subtasks: Subtask[] = [];
+          snapshot.forEach((doc) => {
+            subtasks.push({ id: doc.id, ...doc.data() } as Subtask);
+          });
+          observer.next(subtasks);
+        },
+        (error) => observer.error(error)
+      );
 
       return () => unsubscribe();
     });
@@ -138,7 +161,7 @@ export class TaskService {
 
   /**
    * Adds a new task to Firestore.
-   * 
+   *
    * @param newTask - The task to be added.
    * @returns The created task including its generated ID, or null on failure.
    */
@@ -155,7 +178,7 @@ export class TaskService {
 
   /**
    * Adds a subtask to a specific task's subcollection.
-   * 
+   *
    * @param ColId - The ID of the parent task.
    * @param subtask - The subtask to add.
    * @returns The created subtask with ID, or null on failure.
@@ -173,41 +196,51 @@ export class TaskService {
 
   /**
    * Updates a task document in Firestore.
-   * 
+   *
    * @param docId - The ID of the task.
    * @param updatedTask - The updated task data.
    */
   async updateTask(docId: string, updatedTask: Task) {
     const docRef = this.getSingleTaskRef(docId);
-    await updateDoc(docRef, this.getCleanJson(updatedTask)).catch(console.error);
+    await updateDoc(docRef, this.getCleanJson(updatedTask)).catch(
+      console.error
+    );
   }
 
   /**
    * Updates a subtask document in Firestore.
-   * 
+   *
    * @param taskId - The parent task ID.
    * @param subtaskId - The subtask document ID.
    * @param updatedSubtask - The updated subtask data.
    */
-  async updateSubtask(taskId: string, subtaskId: string, updatedSubtask: Subtask) {
+  async updateSubtask(
+    taskId: string,
+    subtaskId: string,
+    updatedSubtask: Subtask
+  ) {
     const docRef = doc(this.firestore, `tasks/${taskId}/subtasks/${subtaskId}`);
-    await updateDoc(docRef, this.getCleanJson(updatedSubtask)).catch(console.error);
+    await updateDoc(docRef, this.getCleanJson(updatedSubtask)).catch(
+      console.error
+    );
   }
 
   /**
    * Deletes a subtask from a task's subcollection.
-   * 
+   *
    * @param taskId - The parent task ID.
    * @param subtaskId - The subtask ID to delete.
    */
   async deleteSubtask(taskId: string, subtaskId: string) {
     const docRef = doc(this.firestore, `tasks/${taskId}/subtasks/${subtaskId}`);
-    await deleteDoc(docRef).catch(err => console.error('Error deleting subtask:', err));
+    await deleteDoc(docRef).catch((err) =>
+      console.error('Error deleting subtask:', err)
+    );
   }
 
   /**
    * Deletes a task from Firestore.
-   * 
+   *
    * @param docId - The ID of the task to delete.
    */
   async deleteTask(docId: string) {
@@ -216,7 +249,7 @@ export class TaskService {
 
   /**
    * Returns a plain object representation of a Task or Subtask for Firestore updates.
-   * 
+   *
    * @param updated - The object to clean.
    */
   getCleanJson(updated: Task | Subtask) {
@@ -233,7 +266,7 @@ export class TaskService {
     } else if ('isCompleted' in updated) {
       return {
         title: updated.title,
-        isCompleted: updated.isCompleted
+        isCompleted: updated.isCompleted,
       };
     }
     return {};
@@ -241,7 +274,7 @@ export class TaskService {
 
   /**
    * Converts a Firestore Timestamp or Date object to a formatted string.
-   * 
+   *
    * @param date - The Timestamp or Date to convert.
    * @returns A formatted date string (`dd/mm/yyyy`).
    */
@@ -256,7 +289,7 @@ export class TaskService {
 
   /**
    * Formats a Date object into a `dd/mm/yyyy` string.
-   * 
+   *
    * @param date - The Date to format.
    */
   formatDate(date: Date): string {
@@ -268,7 +301,7 @@ export class TaskService {
 
   /**
    * Sets the currently edited task.
-   * 
+   *
    * @param task - The task being edited.
    */
   setEditingTask(task: Task) {
@@ -291,7 +324,7 @@ export class TaskService {
 
   /**
    * Capitalizes the first letter of a string.
-   * 
+   *
    * @param text - The string to capitalize.
    * @returns Capitalized string or empty string if undefined.
    */
