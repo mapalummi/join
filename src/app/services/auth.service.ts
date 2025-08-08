@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Injector } from '@angular/core';
 import {
   Auth,
   createUserWithEmailAndPassword,
@@ -61,7 +61,8 @@ export class AuthService {
   constructor(
     private auth: Auth,
     private firestore: Firestore,
-    private router: Router
+    private router: Router,
+    private injector: Injector
   ) {
     onAuthStateChanged(this.auth, (user) => {
       this.currentUserSubject.next(user);
@@ -162,38 +163,52 @@ export class AuthService {
   /**
    * Signs out the currently authenticated user and redirects to the login page.
    */
-  // async signOutUser(): Promise<void> {
-  //   await signOut(this.auth);
-  //   this.router.navigate(['/login']);
-  // }
-
-  // NEUER:
   async signOutUser(): Promise<void> {
     // Guest-Daten optional löschen beim Logout
     if (this.isGuestUser()) {
       // Local Storage für Guest-User löschen
       this.clearAllGuestData();
       // Oder behalten für nächste Session
+
+      await this.resetGuestServices();
     }
 
     await signOut(this.auth);
     this.router.navigate(['/login']);
   }
 
-  // NEU:
-/**
+  /**
    * Clears all guest data from local storage.
    */
   private clearAllGuestData(): void {
     // Tasks
     localStorage.removeItem('guest-tasks');
     localStorage.removeItem('guest-tasks-loaded');
-    
+
     // Contacts
     localStorage.removeItem('guest-contacts');
     localStorage.removeItem('guest-contacts-loaded');
   }
 
+  /**
+   * Resets guest services to initial state.
+   */
+  private async resetGuestServices(): Promise<void> {
+    try {
+      // Services dynamisch laden um Circular Dependencies zu vermeiden
+      const { TaskService } = await import('./task.service');
+      const { ContactService } = await import('./contact.service');
+
+      const taskService = this.injector.get(TaskService);
+      const contactService = this.injector.get(ContactService);
+
+      // Services zurücksetzen
+      taskService.resetGuestState();
+      contactService.resetGuestState();
+    } catch (error) {
+      console.warn('Error resetting guest services:', error);
+    }
+  }
 
   /**
    * Retrieves the current user's data from Firestore.
@@ -266,8 +281,6 @@ export class AuthService {
       return { success: false, message: this.getErrorMessage(error.code) };
     }
   }
-
-  // NEUE BEFEHLE:
 
   /**
    * Checks if the current user is a guest user.

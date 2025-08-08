@@ -70,26 +70,14 @@ export interface Subtask {
 })
 export class TaskService {
   private editingTask: Task | null = null;
-
-  // NEUER:
   private readonly GUEST_TASKS_KEY = 'guest-tasks';
   private readonly GUEST_LOADED_KEY = 'guest-tasks-loaded';
 
-  // NEU:
-  // private localTasks: Task[] = [];
-  // private localTasksSubject = new BehaviorSubject<Task[]>([]);
+  private guestTasksSubject = new BehaviorSubject<Task[]>([]);
+  private guestTasksInitialized = false;
 
-  // NEU Änderung hier:
   constructor(private firestore: Firestore, private authService: AuthService) {}
 
-  /**
-   * Returns a reference to the 'tasks' Firestore collection.
-   */
-  // getTasksRef() {
-  //   return collection(this.firestore, 'tasks');
-  // }
-
-  // NEU:
   /**
    * Returns a reference to the user-specific tasks collection.
    */
@@ -112,10 +100,6 @@ export class TaskService {
    *
    * @param docId - The document ID of the task.
    */
-  // getSingleTaskRef(docId: string) {
-  //   return doc(collection(this.firestore, 'tasks'), docId);
-  // }
-
   getSingleTaskRef(docId: string) {
     const collectionName = this.authService.getCollectionName('tasks');
     return doc(collection(this.firestore, collectionName), docId);
@@ -124,104 +108,11 @@ export class TaskService {
   /**
    * Observes all tasks in Firestore and emits updates in real-time.
    */
-  // getTasks(): Observable<Task[]> {
-  //   return new Observable((observer) => {
-  //     const unsubscribe = onSnapshot(
-  //       this.getTasksRef(),
-  //       (snapshot) => {
-  //         const tasks: Task[] = [];
-  //         snapshot.forEach((doc) => {
-  //           tasks.push({ id: doc.id, ...doc.data() } as Task);
-  //         });
-  //         observer.next(tasks);
-  //       },
-  //       (error) => {
-  //         observer.error(error);
-  //       }
-  //     );
-
-  //     return () => unsubscribe();
-  //   });
-  // }
-
-  // NEU:
-  /**
-   * Observes all tasks - Firestore for users, local for guests.
-   */
-  // getTasks(): Observable<Task[]> {
-  //   if (this.authService.isGuestUser()) {
-  //     // Für Gäste: Erst Firestore laden, dann lokal arbeiten
-  //     if (this.localTasks.length === 0) {
-  //       return new Observable((observer) => {
-  //         const unsubscribe = onSnapshot(
-  //           this.getTasksRef(),
-  //           (snapshot) => {
-  //             const tasks: Task[] = [];
-  //             snapshot.forEach((doc) => {
-  //               tasks.push({ id: doc.id, ...doc.data() } as Task);
-  //             });
-  //             this.localTasks = [...tasks];
-  //             this.localTasksSubject.next(this.localTasks);
-  //             observer.next(this.localTasks);
-  //           },
-  //           (error) => observer.error(error)
-  //         );
-  //         return () => unsubscribe();
-  //       });
-  //     } else {
-  //       return this.localTasksSubject.asObservable();
-  //     }
-  //   } else {
-  //   // Für registrierte User: Normal Firestore
-  //     return new Observable((observer) => {
-  //       const unsubscribe = onSnapshot(
-  //         this.getTasksRef(),
-  //         (snapshot) => {
-  //           const tasks: Task[] = [];
-  //           snapshot.forEach((doc) => {
-  //             tasks.push({ id: doc.id, ...doc.data() } as Task);
-  //           });
-  //           observer.next(tasks);
-  //         },
-  //         (error) => observer.error(error)
-  //       );
-  //       return () => unsubscribe();
-  //     });
-  //   }
-  // }
-
-  // NEUER:
   getTasks(): Observable<Task[]> {
     if (this.authService.isGuestUser()) {
-      // Für Gäste: Local Storage verwenden
-      return new Observable((observer) => {
-        // Prüfen ob bereits aus Dummy-Collection geladen
-        if (!localStorage.getItem(this.GUEST_LOADED_KEY)) {
-          // Erste Anmeldung: Dummy-Daten aus Firestore laden
-          const unsubscribe = onSnapshot(
-            this.getTasksRef(),
-            (snapshot) => {
-              const tasks: Task[] = [];
-              snapshot.forEach((doc) => {
-                tasks.push({ id: doc.id, ...doc.data() } as Task);
-              });
-              // In Local Storage speichern
-              localStorage.setItem(this.GUEST_TASKS_KEY, JSON.stringify(tasks));
-              localStorage.setItem(this.GUEST_LOADED_KEY, 'true');
-              observer.next(tasks);
-            },
-            (error) => observer.error(error)
-          );
-          return () => unsubscribe();
-        } else {
-          // Bereits geladen: Aus Local Storage lesen
-          const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
-          const tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
-          observer.next(tasks);
-          // ← HIER: Return für den else-Zweig hinzufügen
-          return () => {}; // Leere cleanup-Funktion für Local Storage
-        }
-      });
+      // Für Gäste: Einmalig initialisieren, dann BehaviorSubject zurückgeben
+      this.initializeGuestTasks();
+      return this.guestTasksSubject.asObservable();
     } else {
       // Für registrierte User: Normal Firestore
       return new Observable((observer) => {
@@ -242,29 +133,50 @@ export class TaskService {
   }
 
   /**
-   * Observes the subtasks of a given task in real-time.
-   *
-   * @param taskId - The ID of the parent task.
+   * Initialisiert Guest-Tasks einmalig
    */
-  // getSubtasks(taskId: string): Observable<Subtask[]> {
-  //   return new Observable((observer) => {
-  //     const unsubscribe = onSnapshot(
-  //       this.getSubtasksRef(taskId),
-  //       (snapshot) => {
-  //         const subtasks: Subtask[] = [];
-  //         snapshot.forEach((doc) => {
-  //           subtasks.push({ id: doc.id, ...doc.data() } as Subtask);
-  //         });
-  //         observer.next(subtasks);
-  //       },
-  //       (error) => observer.error(error)
-  //     );
+  private initializeGuestTasks(): void {
+    if (this.guestTasksInitialized) return;
 
-  //     return () => unsubscribe();
-  //   });
-  // }
+    this.guestTasksInitialized = true;
 
-  // NEUER:
+    if (!localStorage.getItem(this.GUEST_LOADED_KEY)) {
+      const unsubscribe = onSnapshot(
+        this.getTasksRef(),
+        (snapshot) => {
+          const tasks: Task[] = [];
+          snapshot.forEach((doc) => {
+            const data = doc.data() as Task;
+            const task: Task = {
+              ...data,
+              id: doc.id,
+              date: this.ensureValidDate(data.date),
+            };
+            tasks.push(task);
+          });
+
+          localStorage.setItem(this.GUEST_TASKS_KEY, JSON.stringify(tasks));
+          localStorage.setItem(this.GUEST_LOADED_KEY, 'true');
+
+          this.guestTasksSubject.next(tasks);
+
+          unsubscribe();
+        },
+        (error) => console.error('Error loading guest tasks:', error)
+      );
+    } else {
+      const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
+      let tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
+
+      tasks = tasks.map((task) => ({
+        ...task,
+        date: this.ensureValidDate(task.date),
+      }));
+
+      this.guestTasksSubject.next(tasks);
+    }
+  }
+
   /**
    * Observes the subtasks of a given task in real-time.
    *
@@ -272,20 +184,22 @@ export class TaskService {
    */
   getSubtasks(taskId: string): Observable<Subtask[]> {
     if (this.authService.isGuestUser()) {
-      // Local Storage für Gäste
       return new Observable((observer) => {
         const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
-        const tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
+        let tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
+
+        tasks = tasks.map((task) => ({
+          ...task,
+          date: this.ensureValidDate(task.date),
+        }));
 
         const task = tasks.find((t) => t.id === taskId);
         const subtasks = task?.subtask || [];
         observer.next(subtasks);
 
-        // Für Local Storage: Einmalige Emission, kein unsubscribe nötig
         return () => {};
       });
     } else {
-      // Firestore für registrierte User
       return new Observable((observer) => {
         const unsubscribe = onSnapshot(
           this.getSubtasksRef(taskId),
@@ -310,48 +224,8 @@ export class TaskService {
    * @param newTask - The task to be added.
    * @returns The created task including its generated ID, or null on failure.
    */
-  // async addTask(newTask: Task): Promise<Task | null> {
-  //   try {
-  //     const tasksRef = this.getTasksRef();
-  //     const docRef = await addDoc(tasksRef, newTask);
-  //     return { id: docRef.id, ...newTask };
-  //   } catch (err) {
-  //     console.error('Error adding task:', err);
-  //     return null;
-  //   }
-  // }
-
-  // NEU:
-  /**
-   * Adds a task - Firestore for users, local for guests.
-   */
-  // async addTask(newTask: Task): Promise<Task | null> {
-  //   if (this.authService.isGuestUser()) {
-  //     // Lokale Speicherung für Gäste
-  //     const taskWithId: Task = {
-  //       ...newTask,
-  //       id: 'local-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9)
-  //     };
-  //     this.localTasks.push(taskWithId);
-  //     this.localTasksSubject.next([...this.localTasks]);
-  //     return taskWithId;
-  //   } else {
-  //     // Firestore für registrierte User
-  //     try {
-  //       const tasksRef = this.getTasksRef();
-  //       const docRef = await addDoc(tasksRef, newTask);
-  //       return { id: docRef.id, ...newTask };
-  //     } catch (err) {
-  //       console.error('Error adding task:', err);
-  //       return null;
-  //     }
-  //   }
-  // }
-
-  // NEUER:
   async addTask(newTask: Task): Promise<Task | null> {
     if (this.authService.isGuestUser()) {
-      // Local Storage für Gäste
       const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
       const tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
 
@@ -359,14 +233,15 @@ export class TaskService {
         ...newTask,
         id:
           'local-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+        date: this.ensureValidDate(newTask.date),
       };
 
       tasks.push(taskWithId);
       localStorage.setItem(this.GUEST_TASKS_KEY, JSON.stringify(tasks));
+      this.guestTasksSubject.next(tasks);
 
       return taskWithId;
     } else {
-      // Firestore für registrierte User
       try {
         const tasksRef = this.getTasksRef();
         const docRef = await addDoc(tasksRef, newTask);
@@ -385,52 +260,8 @@ export class TaskService {
    * @param subtask - The subtask to add.
    * @returns The created subtask with ID, or null on failure.
    */
-  // async addSubtask(ColId: string, subtask: Subtask): Promise<Subtask | null> {
-  //   try {
-  //     const subtasksRef = this.getSubtasksRef(ColId);
-  //     const docRef = await addDoc(subtasksRef, subtask);
-  //     return { id: docRef.id, ...subtask };
-  //   } catch (error) {
-  //     console.error('Error adding subtask:', error);
-  //     return null;
-  //   }
-  // }
-
-  // NEU:
-  // async addSubtask(ColId: string, subtask: Subtask): Promise<Subtask | null> {
-  //     if (this.authService.isGuestUser()) {
-  //       // Lokale Subtask-Speicherung für Gäste
-  //       const taskIndex = this.localTasks.findIndex(task => task.id === ColId);
-  //       if (taskIndex !== -1) {
-  //         const subtaskWithId: Subtask = {
-  //           ...subtask,
-  //           id: 'local-sub-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9)
-  //         };
-  //         if (!this.localTasks[taskIndex].subtask) {
-  //           this.localTasks[taskIndex].subtask = [];
-  //         }
-  //         this.localTasks[taskIndex].subtask!.push(subtaskWithId);
-  //         this.localTasksSubject.next([...this.localTasks]);
-  //         return subtaskWithId;
-  //       }
-  //       return null;
-  //     } else {
-  //       // Firestore für registrierte User
-  //       try {
-  //         const subtasksRef = this.getSubtasksRef(ColId);
-  //         const docRef = await addDoc(subtasksRef, subtask);
-  //         return { id: docRef.id, ...subtask };
-  //       } catch (error) {
-  //         console.error('Error adding subtask:', error);
-  //         return null;
-  //       }
-  //     }
-  //   }
-
-  // NEUER:
   async addSubtask(ColId: string, subtask: Subtask): Promise<Subtask | null> {
     if (this.authService.isGuestUser()) {
-      // Local Storage für Gäste
       const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
       const tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
 
@@ -451,11 +282,12 @@ export class TaskService {
         tasks[taskIndex].subtask!.push(subtaskWithId);
         localStorage.setItem(this.GUEST_TASKS_KEY, JSON.stringify(tasks));
 
+        this.guestTasksSubject.next(tasks);
+
         return subtaskWithId;
       }
       return null;
     } else {
-      // Firestore für registrierte User
       try {
         const subtasksRef = this.getSubtasksRef(ColId);
         const docRef = await addDoc(subtasksRef, subtask);
@@ -473,45 +305,23 @@ export class TaskService {
    * @param docId - The ID of the task.
    * @param updatedTask - The updated task data.
    */
-  // async updateTask(docId: string, updatedTask: Task) {
-  //   const docRef = this.getSingleTaskRef(docId);
-  //   await updateDoc(docRef, this.getCleanJson(updatedTask)).catch(
-  //     console.error
-  //   );
-  // }
-
-  // NEU
-  /**
-   * Updates a task - Firestore for users, local for guests.
-   */
-  // async updateTask(docId: string, updatedTask: Task) {
-  //   if (this.authService.isGuestUser()) {
-  //     // Lokale Aktualisierung für Gäste
-  //     const index = this.localTasks.findIndex(task => task.id === docId);
-  //     if (index !== -1) {
-  //       this.localTasks[index] = { ...updatedTask, id: docId };
-  //       this.localTasksSubject.next([...this.localTasks]);
-  //     }
-  //   } else {
-  //     // Firestore für registrierte User
-  //     const docRef = this.getSingleTaskRef(docId);
-  //     await updateDoc(docRef, this.getCleanJson(updatedTask)).catch(console.error);
-  //   }
-  // }
-
   async updateTask(docId: string, updatedTask: Task) {
     if (this.authService.isGuestUser()) {
-      // Local Storage für Gäste
       const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
       const tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
 
       const index = tasks.findIndex((task) => task.id === docId);
       if (index !== -1) {
-        tasks[index] = { ...updatedTask, id: docId };
+        tasks[index] = {
+          ...updatedTask,
+          id: docId,
+          date: this.ensureValidDate(updatedTask.date),
+        };
+
         localStorage.setItem(this.GUEST_TASKS_KEY, JSON.stringify(tasks));
+        this.guestTasksSubject.next(tasks);
       }
     } else {
-      // Firestore für registrierte User
       const docRef = this.getSingleTaskRef(docId);
       await updateDoc(docRef, this.getCleanJson(updatedTask)).catch(
         console.error
@@ -519,13 +329,11 @@ export class TaskService {
     }
   }
 
-  // NEUER:
   /**
    * Updates task status - Firestore for users, Local Storage for guests.
    */
   async updateTaskStatus(docId: string, newStatus: string) {
     if (this.authService.isGuestUser()) {
-      // Local Storage für Gäste
       const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
       const tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
 
@@ -533,9 +341,10 @@ export class TaskService {
       if (index !== -1) {
         tasks[index].status = newStatus;
         localStorage.setItem(this.GUEST_TASKS_KEY, JSON.stringify(tasks));
+
+        this.guestTasksSubject.next(tasks);
       }
     } else {
-      // Firestore für registrierte User
       const docRef = this.getSingleTaskRef(docId);
       await updateDoc(docRef, { status: newStatus }).catch(console.error);
     }
@@ -548,25 +357,12 @@ export class TaskService {
    * @param subtaskId - The subtask document ID.
    * @param updatedSubtask - The updated subtask data.
    */
-  // async updateSubtask(
-  //   taskId: string,
-  //   subtaskId: string,
-  //   updatedSubtask: Subtask
-  // ) {
-  //   const docRef = doc(this.firestore, `tasks/${taskId}/subtasks/${subtaskId}`);
-  //   await updateDoc(docRef, this.getCleanJson(updatedSubtask)).catch(
-  //     console.error
-  //   );
-  // }
-
-  // NEUER:
   async updateSubtask(
     taskId: string,
     subtaskId: string,
     updatedSubtask: Subtask
   ) {
     if (this.authService.isGuestUser()) {
-      // Local Storage für Gäste
       const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
       const tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
 
@@ -581,10 +377,11 @@ export class TaskService {
             id: subtaskId,
           };
           localStorage.setItem(this.GUEST_TASKS_KEY, JSON.stringify(tasks));
+
+          this.guestTasksSubject.next(tasks);
         }
       }
     } else {
-      // Firestore für registrierte User
       const docRef = doc(this.getSubtasksRef(taskId), subtaskId);
       await updateDoc(docRef, this.getCleanJson(updatedSubtask)).catch(
         console.error
@@ -598,17 +395,8 @@ export class TaskService {
    * @param taskId - The parent task ID.
    * @param subtaskId - The subtask ID to delete.
    */
-  // async deleteSubtask(taskId: string, subtaskId: string) {
-  //   const docRef = doc(this.firestore, `tasks/${taskId}/subtasks/${subtaskId}`);
-  //   await deleteDoc(docRef).catch((err) =>
-  //     console.error('Error deleting subtask:', err)
-  //   );
-  // }
-
-  // NEUER:
   async deleteSubtask(taskId: string, subtaskId: string) {
     if (this.authService.isGuestUser()) {
-      // Local Storage für Gäste
       const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
       const tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
 
@@ -618,9 +406,10 @@ export class TaskService {
           (sub) => sub.id !== subtaskId
         );
         localStorage.setItem(this.GUEST_TASKS_KEY, JSON.stringify(tasks));
+
+        this.guestTasksSubject.next(tasks);
       }
     } else {
-      // Firestore für registrierte User
       await deleteDoc(doc(this.getSubtasksRef(taskId), subtaskId)).catch(
         console.error
       );
@@ -632,35 +421,15 @@ export class TaskService {
    *
    * @param docId - The ID of the task to delete.
    */
-  // async deleteTask(docId: string) {
-  //   await deleteDoc(this.getSingleTaskRef(docId)).catch(console.error);
-  // }
-
-  // NEU:
-  /**
-   * Deletes a task - Firestore for users, local for guests.
-   */
-  // async deleteTask(docId: string) {
-  //   if (this.authService.isGuestUser()) {
-  //     // Lokale Löschung für Gäste
-  //     this.localTasks = this.localTasks.filter(task => task.id !== docId);
-  //     this.localTasksSubject.next([...this.localTasks]);
-  //   } else {
-  //     // Firestore für registrierte User
-  //     await deleteDoc(this.getSingleTaskRef(docId)).catch(console.error);
-  //   }
-  // }
-
   async deleteTask(docId: string) {
     if (this.authService.isGuestUser()) {
-      // Local Storage für Gäste
       const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
       const tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
 
       const filteredTasks = tasks.filter((task) => task.id !== docId);
       localStorage.setItem(this.GUEST_TASKS_KEY, JSON.stringify(filteredTasks));
+      this.guestTasksSubject.next(filteredTasks);
     } else {
-      // Firestore für registrierte User
       await deleteDoc(this.getSingleTaskRef(docId)).catch(console.error);
     }
   }
@@ -741,6 +510,15 @@ export class TaskService {
   }
 
   /**
+   * Resets the guest state to initial values.
+   * Called when guest user logs out.
+   */
+  resetGuestState(): void {
+    this.guestTasksInitialized = false;
+    this.guestTasksSubject.next([]);
+  }
+
+  /**
    * Capitalizes the first letter of a string.
    *
    * @param text - The string to capitalize.
@@ -749,5 +527,32 @@ export class TaskService {
   capitalize(text: string | undefined): string {
     if (!text) return '';
     return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
+  /**
+   * Hilfsmethode: Stellt sicher, dass ein Datum gültig ist
+   */
+  private ensureValidDate(date: Date | Timestamp | string): Date {
+    // Wenn es bereits ein gültiges Date ist
+    if (date instanceof Date && !isNaN(date.getTime())) {
+      return date;
+    }
+
+    if (date && typeof date === 'object' && 'toDate' in date) {
+      return (date as Timestamp).toDate();
+    }
+
+    if (typeof date === 'string') {
+      const parsedDate = new Date(date);
+      if (!isNaN(parsedDate.getTime())) {
+        return parsedDate;
+      }
+    }
+
+    console.warn(
+      'Invalid date detected, using current date as fallback:',
+      date
+    );
+    return new Date();
   }
 }
