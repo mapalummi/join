@@ -92,6 +92,14 @@ export class ContactService {
     '#6bb604ff',
   ];
 
+  // NEUER:
+  private readonly GUEST_CONTACTS_KEY = 'guest-contacts';
+  private readonly GUEST_CONTACTS_LOADED_KEY = 'guest-contacts-loaded';
+
+  // NEU:
+  // private localContacts: Contact[] = [];
+  // private localContactsSubject = new BehaviorSubject<Contact[]>([]);
+
   constructor(private firestore: Firestore, private authService: AuthService) {}
 
   /**
@@ -146,22 +154,124 @@ export class ContactService {
   /**
    * Observes all contacts for the current user type.
    */
-  getContacts(): Observable<Contact[]> {
-    return new Observable((observer) => {
-      const unsubscribe = onSnapshot(
-        this.getContactsRef(),
-        (snapshot) => {
-          const contacts: Contact[] = [];
-          snapshot.forEach((doc) => {
-            contacts.push({ id: doc.id, ...doc.data() } as Contact);
-          });
-          observer.next(contacts);
-        },
-        (error) => observer.error(error)
-      );
+  // getContacts(): Observable<Contact[]> {
+  //   return new Observable((observer) => {
+  //     const unsubscribe = onSnapshot(
+  //       this.getContactsRef(),
+  //       (snapshot) => {
+  //         const contacts: Contact[] = [];
+  //         snapshot.forEach((doc) => {
+  //           contacts.push({ id: doc.id, ...doc.data() } as Contact);
+  //         });
+  //         observer.next(contacts);
+  //       },
+  //       (error) => observer.error(error)
+  //     );
 
-      return () => unsubscribe();
-    });
+  //     return () => unsubscribe();
+  //   });
+  // }
+
+  // NEU:
+  // getContacts(): Observable<Contact[]> {
+  //     if (this.authService.isGuestUser()) {
+  //       // Für Gäste: Erst dummy-contacts laden, dann lokal arbeiten
+  //       if (this.localContacts.length === 0) {
+  //         return new Observable((observer) => {
+  //           const unsubscribe = onSnapshot(
+  //             this.getContactsRef(),
+  //             (snapshot) => {
+  //               const contacts: Contact[] = [];
+  //               snapshot.forEach((doc) => {
+  //                 contacts.push({ id: doc.id, ...doc.data() } as Contact);
+  //               });
+  //               this.localContacts = [...contacts];
+  //               this.localContactsSubject.next(this.localContacts);
+  //               observer.next(this.localContacts);
+  //             },
+  //             (error) => observer.error(error)
+  //           );
+  //           return () => unsubscribe();
+  //         });
+  //       } else {
+  //         return this.localContactsSubject.asObservable();
+  //       }
+  //     } else {
+  //       // Für registrierte User: Normal Firestore
+  //       return new Observable((observer) => {
+  //         const unsubscribe = onSnapshot(
+  //           this.getContactsRef(),
+  //           (snapshot) => {
+  //             const contacts: Contact[] = [];
+  //             snapshot.forEach((doc) => {
+  //               contacts.push({ id: doc.id, ...doc.data() } as Contact);
+  //             });
+  //             observer.next(contacts);
+  //           },
+  //           (error) => observer.error(error)
+  //         );
+  //         return () => unsubscribe();
+  //       });
+  //     }
+  //   }
+
+  // NEUER:
+  /**
+   * Observes all contacts for the current user type.
+   */
+  getContacts(): Observable<Contact[]> {
+    if (this.authService.isGuestUser()) {
+      // Für Gäste: Local Storage verwenden
+      return new Observable((observer) => {
+        // Prüfen ob bereits aus Dummy-Collection geladen
+        if (!localStorage.getItem(this.GUEST_CONTACTS_LOADED_KEY)) {
+          // Erste Anmeldung: Dummy-Daten aus Firestore laden
+          const unsubscribe = onSnapshot(
+            this.getContactsRef(),
+            (snapshot) => {
+              const contacts: Contact[] = [];
+              snapshot.forEach((doc) => {
+                contacts.push({ id: doc.id, ...doc.data() } as Contact);
+              });
+              // In Local Storage speichern
+              localStorage.setItem(
+                this.GUEST_CONTACTS_KEY,
+                JSON.stringify(contacts)
+              );
+              localStorage.setItem(this.GUEST_CONTACTS_LOADED_KEY, 'true');
+              observer.next(contacts);
+            },
+            (error) => observer.error(error)
+          );
+          return () => unsubscribe();
+        } else {
+          // Bereits geladen: Aus Local Storage lesen
+          const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
+          const contacts: Contact[] = savedContacts
+            ? JSON.parse(savedContacts)
+            : [];
+          observer.next(contacts);
+          // ← HIER: Return für den else-Zweig hinzufügen
+          return () => {}; // Leere cleanup-Funktion für Local Storage
+        }
+      });
+    } else {
+      // Für registrierte User: Normal Firestore
+      return new Observable((observer) => {
+        const unsubscribe = onSnapshot(
+          this.getContactsRef(),
+          (snapshot) => {
+            const contacts: Contact[] = [];
+            snapshot.forEach((doc) => {
+              contacts.push({ id: doc.id, ...doc.data() } as Contact);
+            });
+            observer.next(contacts);
+          },
+          (error) => observer.error(error)
+        );
+        return () => unsubscribe();
+      });
+    }
   }
 
   /**
@@ -185,14 +295,70 @@ export class ContactService {
   /**
    * Adds a new contact to the user-specific collection.
    */
+  // async addContact(newContact: Contact): Promise<Contact | null> {
+  //   try {
+  //     const contactsRef = this.getContactsRef();
+  //     const docRef = await addDoc(contactsRef, newContact);
+  //     return { id: docRef.id, ...newContact };
+  //   } catch (error) {
+  //     console.error('Error adding contact:', error);
+  //     return null;
+  //   }
+  // }
+
+  // NEU:
+  // async addContact(newContact: Contact): Promise<Contact | null> {
+  //     if (this.authService.isGuestUser()) {
+  //       // Lokale Speicherung für Gäste
+  //       const contactWithId: Contact = {
+  //         ...newContact,
+  //         id: 'local-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9)
+  //       };
+  //       this.localContacts.push(contactWithId);
+  //       this.localContactsSubject.next([...this.localContacts]);
+  //       return contactWithId;
+  //     } else {
+  //       // Firestore für registrierte User
+  //       try {
+  //         const contactsRef = this.getContactsRef();
+  //         const docRef = await addDoc(contactsRef, newContact);
+  //         return { id: docRef.id, ...newContact };
+  //       } catch (error) {
+  //         console.error('Error adding contact:', error);
+  //         return null;
+  //       }
+  //     }
+  //   }
+
+  // NEUER:
   async addContact(newContact: Contact): Promise<Contact | null> {
-    try {
-      const contactsRef = this.getContactsRef();
-      const docRef = await addDoc(contactsRef, newContact);
-      return { id: docRef.id, ...newContact };
-    } catch (error) {
-      console.error('Error adding contact:', error);
-      return null;
+    if (this.authService.isGuestUser()) {
+      // Local Storage für Gäste
+      const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
+      const contacts: Contact[] = savedContacts
+        ? JSON.parse(savedContacts)
+        : [];
+
+      const contactWithId: Contact = {
+        ...newContact,
+        id:
+          'local-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+      };
+
+      contacts.push(contactWithId);
+      localStorage.setItem(this.GUEST_CONTACTS_KEY, JSON.stringify(contacts));
+
+      return contactWithId;
+    } else {
+      // Firestore für registrierte User
+      try {
+        const contactsRef = this.getContactsRef();
+        const docRef = await addDoc(contactsRef, newContact);
+        return { id: docRef.id, ...newContact };
+      } catch (error) {
+        console.error('Error adding contact:', error);
+        return null;
+      }
     }
   }
 
@@ -202,11 +368,54 @@ export class ContactService {
    * @param docId - The Firestore document ID of the contact to update.
    * @param updatedContact - The updated contact data.
    */
+  // async updateContact(docId: string, updatedContact: Contact): Promise<void> {
+  //   let docRef = this.getSingleContactsRef(docId);
+  //   await updateDoc(docRef, this.getCleanJson(updatedContact)).catch((err) => {
+  //     console.error(err);
+  //   });
+  // }
+
+  // NEU:
+  // async updateContact(docId: string, updatedContact: Contact): Promise<void> {
+  //   if (this.authService.isGuestUser()) {
+  //     // Lokale Aktualisierung für Gäste
+  //     const index = this.localContacts.findIndex(contact => contact.id === docId);
+  //     if (index !== -1) {
+  //       this.localContacts[index] = { ...updatedContact, id: docId };
+  //       this.localContactsSubject.next([...this.localContacts]);
+  //     }
+  //   } else {
+  //     // Firestore für registrierte User
+  //     let docRef = this.getSingleContactsRef(docId);
+  //     await updateDoc(docRef, this.getCleanJson(updatedContact)).catch((err) => {
+  //       console.error(err);
+  //     });
+  //   }
+  // }
+
+  // NEUER:
   async updateContact(docId: string, updatedContact: Contact): Promise<void> {
-    let docRef = this.getSingleContactsRef(docId);
-    await updateDoc(docRef, this.getCleanJson(updatedContact)).catch((err) => {
-      console.error(err);
-    });
+    if (this.authService.isGuestUser()) {
+      // Local Storage für Gäste
+      const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
+      const contacts: Contact[] = savedContacts
+        ? JSON.parse(savedContacts)
+        : [];
+
+      const index = contacts.findIndex((contact) => contact.id === docId);
+      if (index !== -1) {
+        contacts[index] = { ...updatedContact, id: docId };
+        localStorage.setItem(this.GUEST_CONTACTS_KEY, JSON.stringify(contacts));
+      }
+    } else {
+      // Firestore für registrierte User
+      let docRef = this.getSingleContactsRef(docId);
+      await updateDoc(docRef, this.getCleanJson(updatedContact)).catch(
+        (err) => {
+          console.error(err);
+        }
+      );
+    }
   }
 
   /**
@@ -271,10 +480,48 @@ export class ContactService {
    *
    * @param docId - The Firestore document ID of the contact to delete.
    */
+  // async deleteContact(docId: string): Promise<void> {
+  //   await deleteDoc(this.getSingleContactsRef(docId)).catch((err) => {
+  //     console.log(err);
+  //   });
+  // }
+
+  // NEU:
+  // async deleteContact(docId: string): Promise<void> {
+  //     if (this.authService.isGuestUser()) {
+  //       // Lokale Löschung für Gäste
+  //       this.localContacts = this.localContacts.filter(contact => contact.id !== docId);
+  //       this.localContactsSubject.next([...this.localContacts]);
+  //     } else {
+  //       // Firestore für registrierte User
+  //       await deleteDoc(this.getSingleContactsRef(docId)).catch((err) => {
+  //         console.log(err);
+  //       });
+  //     }
+  //   }
+
+  // NEUER:
   async deleteContact(docId: string): Promise<void> {
-    await deleteDoc(this.getSingleContactsRef(docId)).catch((err) => {
-      console.log(err);
-    });
+    if (this.authService.isGuestUser()) {
+      // Local Storage für Gäste
+      const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
+      const contacts: Contact[] = savedContacts
+        ? JSON.parse(savedContacts)
+        : [];
+
+      const filteredContacts = contacts.filter(
+        (contact) => contact.id !== docId
+      );
+      localStorage.setItem(
+        this.GUEST_CONTACTS_KEY,
+        JSON.stringify(filteredContacts)
+      );
+    } else {
+      // Firestore für registrierte User
+      await deleteDoc(this.getSingleContactsRef(docId)).catch((err) => {
+        console.log(err);
+      });
+    }
   }
 
   /**
@@ -310,13 +557,42 @@ export class ContactService {
    * @param contactId - The Firestore document ID.
    * @returns A promise resolving to the contact object or null if not found.
    */
+  // async getContactById(contactId: string): Promise<Contact | null> {
+  //   const contactRef = this.getSingleContactsRef(contactId);
+  //   return getDoc(contactRef).then((snapshot) => {
+  //     if (snapshot.exists()) {
+  //       return { id: snapshot.id, ...snapshot.data() } as Contact;
+  //     }
+  //     return null;
+  //   });
+  // }
+
+  // NEUER:
+  /**
+   * Fetches a single contact by its Firestore document ID.
+   *
+   * @param contactId - The Firestore document ID.
+   * @returns A promise resolving to the contact object or null if not found.
+   */
   async getContactById(contactId: string): Promise<Contact | null> {
-    const contactRef = this.getSingleContactsRef(contactId);
-    return getDoc(contactRef).then((snapshot) => {
-      if (snapshot.exists()) {
-        return { id: snapshot.id, ...snapshot.data() } as Contact;
-      }
-      return null;
-    });
+    if (this.authService.isGuestUser()) {
+      // Local Storage für Gäste
+      const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
+      const contacts: Contact[] = savedContacts
+        ? JSON.parse(savedContacts)
+        : [];
+
+      const contact = contacts.find((c) => c.id === contactId);
+      return contact || null;
+    } else {
+      // Firestore für registrierte User
+      const contactRef = this.getSingleContactsRef(contactId);
+      return getDoc(contactRef).then((snapshot) => {
+        if (snapshot.exists()) {
+          return { id: snapshot.id, ...snapshot.data() } as Contact;
+        }
+        return null;
+      });
+    }
   }
 }

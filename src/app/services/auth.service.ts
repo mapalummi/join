@@ -162,10 +162,38 @@ export class AuthService {
   /**
    * Signs out the currently authenticated user and redirects to the login page.
    */
+  // async signOutUser(): Promise<void> {
+  //   await signOut(this.auth);
+  //   this.router.navigate(['/login']);
+  // }
+
+  // NEUER:
   async signOutUser(): Promise<void> {
+    // Guest-Daten optional löschen beim Logout
+    if (this.isGuestUser()) {
+      // Local Storage für Guest-User löschen
+      this.clearAllGuestData();
+      // Oder behalten für nächste Session
+    }
+
     await signOut(this.auth);
     this.router.navigate(['/login']);
   }
+
+  // NEU:
+/**
+   * Clears all guest data from local storage.
+   */
+  private clearAllGuestData(): void {
+    // Tasks
+    localStorage.removeItem('guest-tasks');
+    localStorage.removeItem('guest-tasks-loaded');
+    
+    // Contacts
+    localStorage.removeItem('guest-contacts');
+    localStorage.removeItem('guest-contacts-loaded');
+  }
+
 
   /**
    * Retrieves the current user's data from Firestore.
@@ -260,5 +288,13 @@ export class AuthService {
       return `dummy-${baseCollection}`;
     }
     return baseCollection; // Normale Collections für registrierte User
+  }
+
+  /**
+   * Checks if operations should be saved to Firestore.
+   * @returns False for guest users (local only), true for registered users
+   */
+  shouldSaveToFirestore(): boolean {
+    return !this.isGuestUser();
   }
 }
