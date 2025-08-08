@@ -110,11 +110,11 @@ export class TaskService {
    */
   getTasks(): Observable<Task[]> {
     if (this.authService.isGuestUser()) {
-      // Für Gäste: Einmalig initialisieren, dann BehaviorSubject zurückgeben
+      
       this.initializeGuestTasks();
       return this.guestTasksSubject.asObservable();
     } else {
-      // Für registrierte User: Normal Firestore
+      
       return new Observable((observer) => {
         const unsubscribe = onSnapshot(
           this.getTasksRef(),
@@ -135,112 +135,61 @@ export class TaskService {
   /**
    * Initialisiert Guest-Tasks einmalig
    */
-  // private initializeGuestTasks(): void {
-  //   if (this.guestTasksInitialized) return;
+  private initializeGuestTasks(): void {
+    if (this.guestTasksInitialized) {
+      
+      const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
+      if (savedTasks) {
+        
+        let tasks: Task[] = JSON.parse(savedTasks);
+        tasks = tasks.map((task) => ({
+          ...task,
+          date: this.ensureValidDate(task.date),
+        }));
+        this.guestTasksSubject.next(tasks);
+        return;
+      } else {
+        this.guestTasksInitialized = false;
+      }
+    }
 
-  //   this.guestTasksInitialized = true;
+    this.guestTasksInitialized = true;
 
-  //   if (!localStorage.getItem(this.GUEST_LOADED_KEY)) {
-  //     const unsubscribe = onSnapshot(
-  //       this.getTasksRef(),
-  //       (snapshot) => {
-  //         const tasks: Task[] = [];
-  //         snapshot.forEach((doc) => {
-  //           const data = doc.data() as Task;
-  //           const task: Task = {
-  //             ...data,
-  //             id: doc.id,
-  //             date: this.ensureValidDate(data.date),
-  //           };
-  //           tasks.push(task);
-  //         });
+    if (!localStorage.getItem(this.GUEST_LOADED_KEY)) {
+      const unsubscribe = onSnapshot(
+        this.getTasksRef(),
+        (snapshot) => {
+          const tasks: Task[] = [];
+          snapshot.forEach((doc) => {
+            const data = doc.data() as Task;
+            const task: Task = {
+              ...data,
+              id: doc.id,
+              date: this.ensureValidDate(data.date),
+            };
+            tasks.push(task);
+          });
 
-  //         localStorage.setItem(this.GUEST_TASKS_KEY, JSON.stringify(tasks));
-  //         localStorage.setItem(this.GUEST_LOADED_KEY, 'true');
+          localStorage.setItem(this.GUEST_TASKS_KEY, JSON.stringify(tasks));
+          localStorage.setItem(this.GUEST_LOADED_KEY, 'true');
+          this.guestTasksSubject.next(tasks);
 
-  //         this.guestTasksSubject.next(tasks);
+          unsubscribe();
+        },
+        (error) => console.error('Error loading guest tasks:', error)
+      );
+    } else {
+      const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
+      let tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
 
-  //         unsubscribe();
-  //       },
-  //       (error) => console.error('Error loading guest tasks:', error)
-  //     );
-  //   } else {
-  //     const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
-  //     let tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
-
-  //     tasks = tasks.map((task) => ({
-  //       ...task,
-  //       date: this.ensureValidDate(task.date),
-  //     }));
-
-  //     this.guestTasksSubject.next(tasks);
-  //   }
-  // }
-
-  /**
- * Initialisiert Guest-Tasks einmalig
- */
-private initializeGuestTasks(): void {
-  if (this.guestTasksInitialized) {
-    // Prüfen ob Local Storage Daten vorhanden sind
-    const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
-    if (savedTasks) {
-      // Daten vorhanden: aus Local Storage laden
-      let tasks: Task[] = JSON.parse(savedTasks);
       tasks = tasks.map((task) => ({
         ...task,
         date: this.ensureValidDate(task.date),
       }));
+
       this.guestTasksSubject.next(tasks);
-      return;
-    } else {
-      // Keine Daten vorhanden (nach Logout): neu initialisieren
-      this.guestTasksInitialized = false;
     }
   }
-
-  this.guestTasksInitialized = true;
-
-  if (!localStorage.getItem(this.GUEST_LOADED_KEY)) {
-    // Dummy-Daten aus Firestore laden
-    console.log('Loading fresh guest tasks from Firestore...'); // Debug
-    const unsubscribe = onSnapshot(
-      this.getTasksRef(),
-      (snapshot) => {
-        console.log('Firestore tasks snapshot received:', snapshot.size); // Debug
-        const tasks: Task[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data() as Task;
-          const task: Task = {
-            ...data,
-            id: doc.id,
-            date: this.ensureValidDate(data.date),
-          };
-          tasks.push(task);
-        });
-
-        console.log('Fresh tasks loaded:', tasks); // Debug
-        localStorage.setItem(this.GUEST_TASKS_KEY, JSON.stringify(tasks));
-        localStorage.setItem(this.GUEST_LOADED_KEY, 'true');
-        this.guestTasksSubject.next(tasks);
-
-        unsubscribe();
-      },
-      (error) => console.error('Error loading guest tasks:', error)
-    );
-  } else {
-    // Bereits geladen: aus Local Storage lesen
-    const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
-    let tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
-
-    tasks = tasks.map((task) => ({
-      ...task,
-      date: this.ensureValidDate(task.date),
-    }));
-
-    this.guestTasksSubject.next(tasks);
-  }
-}
 
   /**
    * Observes the subtasks of a given task in real-time.

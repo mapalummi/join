@@ -169,10 +169,8 @@ export class AuthService {
       // Local Storage für Guest-User löschen
       this.clearAllGuestData();
       // Oder behalten für nächste Session
-
       await this.resetGuestServices();
     }
-
     await signOut(this.auth);
     this.router.navigate(['/login']);
   }
@@ -181,11 +179,9 @@ export class AuthService {
    * Clears all guest data from local storage.
    */
   private clearAllGuestData(): void {
-    // Tasks
     localStorage.removeItem('guest-tasks');
     localStorage.removeItem('guest-tasks-loaded');
 
-    // Contacts
     localStorage.removeItem('guest-contacts');
     localStorage.removeItem('guest-contacts-loaded');
   }
@@ -195,14 +191,12 @@ export class AuthService {
    */
   private async resetGuestServices(): Promise<void> {
     try {
-      // Services dynamisch laden um Circular Dependencies zu vermeiden
       const { TaskService } = await import('./task.service');
       const { ContactService } = await import('./contact.service');
 
       const taskService = this.injector.get(TaskService);
       const contactService = this.injector.get(ContactService);
 
-      // Services zurücksetzen
       taskService.resetGuestState();
       contactService.resetGuestState();
     } catch (error) {
