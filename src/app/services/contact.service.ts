@@ -148,38 +148,89 @@ export class ContactService {
     }
   }
 
-  private initializeGuestContacts(): void {
-    if (this.guestContactsInitialized) return;
+  // private initializeGuestContacts(): void {
+  //   if (this.guestContactsInitialized) return;
 
-    this.guestContactsInitialized = true;
+  //   this.guestContactsInitialized = true;
 
-    if (!localStorage.getItem(this.GUEST_CONTACTS_LOADED_KEY)) {
-      const unsubscribe = onSnapshot(
-        this.getContactsRef(),
-        (snapshot) => {
-          const contacts: Contact[] = [];
-          snapshot.forEach((doc) => {
-            contacts.push({ id: doc.id, ...doc.data() } as Contact);
-          });
-          localStorage.setItem(
-            this.GUEST_CONTACTS_KEY,
-            JSON.stringify(contacts)
-          );
-          localStorage.setItem(this.GUEST_CONTACTS_LOADED_KEY, 'true');
-          this.guestContactsSubject.next(contacts);
+  //   if (!localStorage.getItem(this.GUEST_CONTACTS_LOADED_KEY)) {
+  //     const unsubscribe = onSnapshot(
+  //       this.getContactsRef(),
+  //       (snapshot) => {
+  //         const contacts: Contact[] = [];
+  //         snapshot.forEach((doc) => {
+  //           contacts.push({ id: doc.id, ...doc.data() } as Contact);
+  //         });
+  //         localStorage.setItem(
+  //           this.GUEST_CONTACTS_KEY,
+  //           JSON.stringify(contacts)
+  //         );
+  //         localStorage.setItem(this.GUEST_CONTACTS_LOADED_KEY, 'true');
+  //         this.guestContactsSubject.next(contacts);
 
-          unsubscribe();
-        },
-        (error) => console.error('Error loading guest contacts:', error)
-      );
-    } else {
-      const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
-      const contacts: Contact[] = savedContacts
-        ? JSON.parse(savedContacts)
-        : [];
+  //         unsubscribe();
+  //       },
+  //       (error) => console.error('Error loading guest contacts:', error)
+  //     );
+  //   } else {
+  //     const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
+  //     const contacts: Contact[] = savedContacts
+  //       ? JSON.parse(savedContacts)
+  //       : [];
+  //     this.guestContactsSubject.next(contacts);
+  //   }
+  // }
+
+/**
+ * Initialisiert Guest-Contacts einmalig
+ */
+private initializeGuestContacts(): void {
+  if (this.guestContactsInitialized) {
+    // Prüfen ob Local Storage Daten vorhanden sind
+    const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
+    if (savedContacts) {
+      // Daten vorhanden: aus Local Storage laden
+      const contacts: Contact[] = JSON.parse(savedContacts);
       this.guestContactsSubject.next(contacts);
+      return;
+    } else {
+      // Keine Daten vorhanden (nach Logout): neu initialisieren
+      this.guestContactsInitialized = false;
     }
   }
+
+  this.guestContactsInitialized = true;
+
+  if (!localStorage.getItem(this.GUEST_CONTACTS_LOADED_KEY)) {
+    // Dummy-Daten aus Firestore laden
+    console.log('Loading fresh guest contacts from Firestore...'); // Debug
+    const unsubscribe = onSnapshot(
+      this.getContactsRef(),
+      (snapshot) => {
+        console.log('Firestore contacts snapshot received:', snapshot.size); // Debug
+        const contacts: Contact[] = [];
+        snapshot.forEach((doc) => {
+          contacts.push({ id: doc.id, ...doc.data() } as Contact);
+        });
+        
+        console.log('Fresh contacts loaded:', contacts); // Debug
+        localStorage.setItem(this.GUEST_CONTACTS_KEY, JSON.stringify(contacts));
+        localStorage.setItem(this.GUEST_CONTACTS_LOADED_KEY, 'true');
+        this.guestContactsSubject.next(contacts);
+
+        unsubscribe();
+      },
+      (error) => console.error('Error loading guest contacts:', error)
+    );
+  } else {
+    // Bereits geladen: aus Local Storage lesen
+    const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
+    const contacts: Contact[] = savedContacts ? JSON.parse(savedContacts) : [];
+    this.guestContactsSubject.next(contacts);
+  }
+}
+
+
 
   /**
    * Adds a new contact to Firestore.
@@ -393,5 +444,10 @@ export class ContactService {
   resetGuestState(): void {
     this.guestContactsInitialized = false;
     this.guestContactsSubject.next([]);
+
+    // NEU: Selected Contact und Form-States zurücksetzen
+  this.selectedContactSubject.next(null);
+  this.showFormSubject.next(false);
+  this.editContactSubject.next(null);
   }
 }
