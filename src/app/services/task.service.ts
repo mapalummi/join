@@ -73,7 +73,7 @@ export class TaskService {
   private readonly GUEST_TASKS_KEY = 'guest-tasks';
   private readonly GUEST_LOADED_KEY = 'guest-tasks-loaded';
 
-  private guestTasksSubject = new BehaviorSubject<Task[]>([]);
+  public guestTasksSubject = new BehaviorSubject<Task[]>([]);
   private guestTasksInitialized = false;
 
   constructor(private firestore: Firestore, private authService: AuthService) {}

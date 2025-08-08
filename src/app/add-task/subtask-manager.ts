@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { TaskService, Task } from '../services/task.service';
+import { AuthService } from '../services/auth.service';
 
 export interface Subtask {
   id: string | number;
@@ -24,7 +25,7 @@ export class SubtaskManager {
   private showSubtaskConfirmation: boolean = false;
   originalSubtasks: Subtask[] = [];
 
-  constructor( private taskService: TaskService ){}
+  constructor( private taskService: TaskService, private authService: AuthService ){}
 
   /**
    * Gets all subtasks
@@ -248,14 +249,82 @@ export class SubtaskManager {
    * @param taskId - The ID of the task to add subtasks to.
    * @param subtasks - The list of subtasks to be saved.
    */
+  // public async saveAllSubtasks(taskId: string, subtasks: any[]): Promise<void> {
+  //   for (const subtask of subtasks) {
+  //     await this.taskService.addSubtask(taskId, {
+  //       title: subtask.text,
+  //       isCompleted: subtask.completed
+  //     });
+  //   }
+  // }
+
+  // NEU:
+  /**
+   * Saves all given subtasks to the task with the specified ID.
+   * 
+   * @param taskId - The ID of the task to add subtasks to.
+   * @param subtasks - The list of subtasks to be saved.
+   */
   public async saveAllSubtasks(taskId: string, subtasks: any[]): Promise<void> {
-    for (const subtask of subtasks) {
-      await this.taskService.addSubtask(taskId, {
-        title: subtask.text,
-        isCompleted: subtask.completed
-      });
+    if (this.authService.isGuestUser()) {
+      // Für Guest-User: Alle Subtasks auf einmal zum Task hinzufügen
+      await this.saveGuestSubtasks(taskId, subtasks);
+    } else {
+      // Für registrierte User: Einzeln über Firestore speichern
+      for (const subtask of subtasks) {
+        await this.taskService.addSubtask(taskId, {
+          title: subtask.text,
+          isCompleted: subtask.completed
+        });
+      }
     }
   }
+
+  /**
+   * Speichert alle Subtasks für Guest-User direkt im Task-Objekt
+   */
+  private async saveGuestSubtasks(taskId: string, subtasks: any[]): Promise<void> {
+    // Local Storage Tasks laden
+    const savedTasks = localStorage.getItem('guest-tasks');
+    const tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
+    
+    // Task finden und Subtasks hinzufügen
+    const taskIndex = tasks.findIndex(task => task.id === taskId);
+    if (taskIndex !== -1) {
+      // Alle Subtasks mit IDs versehen und zum Task hinzufügen
+      const subtasksWithIds = subtasks.map(subtask => ({
+        id: 'local-sub-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+        title: subtask.text,
+        isCompleted: subtask.completed
+      }));
+      
+      tasks[taskIndex].subtask = subtasksWithIds;
+      
+      // Zurück in Local Storage speichern
+      localStorage.setItem('guest-tasks', JSON.stringify(tasks));
+      
+      // TaskService BehaviorSubject aktualisieren
+      await this.notifyTaskServiceUpdate(tasks);
+    }
+  }
+
+/**
+   * Benachrichtigt den TaskService über die Aktualisierung
+   */
+  private async notifyTaskServiceUpdate(tasks: Task[]): Promise<void> {
+    // TaskService dynamisch laden um Circular Dependencies zu vermeiden
+    try {
+      const taskService = this.taskService as any;
+      if (taskService.guestTasksSubject) {
+        taskService.guestTasksSubject.next(tasks);
+      }
+    } catch (error) {
+      console.warn('Error updating TaskService:', error);
+    }
+  }
+
+
+
 
   /**
    * Returns a list of original subtasks that have been deleted.
@@ -276,13 +345,58 @@ export class SubtaskManager {
    * @param taskId - The ID of the task.
    * @param subtasks - The subtasks to delete.
    */
+  // public async deleteSubtasks(taskId: string, subtasks: any[]): Promise<void> {
+  //   for (const subtask of subtasks) {
+  //     if (typeof subtask.id === 'string') {
+  //       await this.taskService.deleteSubtask(taskId, subtask.id);
+  //     }
+  //   }
+  // }
+
+  // NEU:
+  /**
+   * Deletes the given subtasks from the specified task.
+   * 
+   * @param taskId - The ID of the task.
+   * @param subtasks - The subtasks to delete.
+   */
   public async deleteSubtasks(taskId: string, subtasks: any[]): Promise<void> {
-    for (const subtask of subtasks) {
-      if (typeof subtask.id === 'string') {
-        await this.taskService.deleteSubtask(taskId, subtask.id);
+    if (this.authService.isGuestUser()) {
+      // Für Guest-User: Local Storage Löschung
+      await this.deleteGuestSubtasks(taskId, subtasks);
+    } else {
+      // Für registrierte User: Firestore Löschung
+      for (const subtask of subtasks) {
+        if (typeof subtask.id === 'string') {
+          await this.taskService.deleteSubtask(taskId, subtask.id);
+        }
       }
     }
   }
+
+// NEU:
+/**
+   * Löscht Subtasks für Guest-User aus dem Local Storage
+   */
+  private async deleteGuestSubtasks(taskId: string, subtasks: any[]): Promise<void> {
+    const savedTasks = localStorage.getItem('guest-tasks');
+    const tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
+    
+    const taskIndex = tasks.findIndex(task => task.id === taskId);
+    if (taskIndex !== -1 && tasks[taskIndex].subtask) {
+      // Subtasks entfernen die gelöscht werden sollen
+      const subtaskIdsToDelete = subtasks.map(s => s.id);
+      tasks[taskIndex].subtask = tasks[taskIndex].subtask!.filter(
+        sub => !subtaskIdsToDelete.includes(sub.id)
+      );
+      
+      localStorage.setItem('guest-tasks', JSON.stringify(tasks));
+      await this.notifyTaskServiceUpdate(tasks);
+    }
+  }
+
+
+
 
   /**
    * Syncs all current subtasks (add or update) with the backend.
@@ -290,19 +404,85 @@ export class SubtaskManager {
    * @param taskId - The ID of the task to sync with.
    * @param subtasks - The current list of subtasks in the form.
    */
+  // public async syncSubtasks(taskId: string, subtasks: any[]): Promise<void> {
+  //   for (const subtask of subtasks) {
+  //     const subtaskData = {
+  //       title: subtask.text,
+  //       isCompleted: subtask.completed
+  //     };
+  //     if (typeof subtask.id === 'string' && subtask.id.length > 0) {
+  //       await this.taskService.updateSubtask(taskId, subtask.id, subtaskData);
+  //     } else {
+  //       await this.taskService.addSubtask(taskId, subtaskData);
+  //     }
+  //   }
+  // }
+
+  // NEU:
+  /**
+   * Syncs all current subtasks (add or update) with the backend.
+   * 
+   * @param taskId - The ID of the task to sync with.
+   * @param subtasks - The current list of subtasks in the form.
+   */
   public async syncSubtasks(taskId: string, subtasks: any[]): Promise<void> {
-    for (const subtask of subtasks) {
-      const subtaskData = {
-        title: subtask.text,
-        isCompleted: subtask.completed
-      };
-      if (typeof subtask.id === 'string' && subtask.id.length > 0) {
-        await this.taskService.updateSubtask(taskId, subtask.id, subtaskData);
-      } else {
-        await this.taskService.addSubtask(taskId, subtaskData);
+    if (this.authService.isGuestUser()) {
+      // Für Guest-User: Direkte Local Storage Synchronisation
+      await this.syncGuestSubtasks(taskId, subtasks);
+    } else {
+      // Für registrierte User: Normale Firestore Synchronisation
+      for (const subtask of subtasks) {
+        const subtaskData = {
+          title: subtask.text,
+          isCompleted: subtask.completed
+        };
+        if (typeof subtask.id === 'string' && subtask.id.length > 0) {
+          await this.taskService.updateSubtask(taskId, subtask.id, subtaskData);
+        } else {
+          await this.taskService.addSubtask(taskId, subtaskData);
+        }
       }
     }
   }
+
+
+
+  // NEU:
+   /**
+   * Synchronisiert Subtasks für Guest-User im Local Storage
+   */
+  private async syncGuestSubtasks(taskId: string, subtasks: any[]): Promise<void> {
+    const savedTasks = localStorage.getItem('guest-tasks');
+    const tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
+    
+    const taskIndex = tasks.findIndex(task => task.id === taskId);
+    if (taskIndex !== -1) {
+      // Bestehende und neue Subtasks verarbeiten
+      const syncedSubtasks = subtasks.map(subtask => {
+        if (typeof subtask.id === 'string' && subtask.id.length > 0) {
+          // Bestehende Subtask aktualisieren
+          return {
+            id: subtask.id,
+            title: subtask.text,
+            isCompleted: subtask.completed
+          };
+        } else {
+          // Neue Subtask hinzufügen
+          return {
+            id: 'local-sub-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+            title: subtask.text,
+            isCompleted: subtask.completed
+          };
+        }
+      });
+      
+      tasks[taskIndex].subtask = syncedSubtasks;
+      localStorage.setItem('guest-tasks', JSON.stringify(tasks));
+      await this.notifyTaskServiceUpdate(tasks);
+    }
+  }
+
+
 
    /**
    * Loads subtasks for the given task ID and sets them in the subtask manager.

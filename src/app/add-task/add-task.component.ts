@@ -144,6 +144,76 @@ export class AddTaskComponent implements OnInit, OnDestroy {
     }
   }
 
+//   // NEU
+//   async loadEditingTask(): Promise<void> {
+//     const editingTask = this.taskService.getEditingTask();
+//     if (editingTask && editingTask.id) {
+//       await this.loadTaskById(editingTask.id);
+//     } else {
+//       this.clearAllManagers();
+//     }
+//   }
+
+// // NEU
+//   private async loadTaskById(taskId: string): Promise<void>{
+//     try {
+//       const freshTask = await this.taskService.getTaskById(taskId);
+//       if (!freshTask) return;
+
+//       this.isEditingMode = true;
+//       this.editingTaskId = taskId;
+//       this.editingTask = freshTask;
+
+//       await Promise.all([
+//         this.loadFreshTaskData(freshTask),
+//         this.loadFreshSubtasks(taskId),
+//         this.loadFreshImages(freshTask.imageKey || [])
+//       ]);
+//     } catch (error){
+//       console.error('Error loading task for editing:', error);
+//       this.clearAllManagers();
+//     }
+//   }
+
+//   /**
+//  * Loads task basic data into form
+//  */
+// private async loadFreshTaskData(task: Task): Promise<void> {
+//   // Use existing taskDataService but ensure fresh data
+//   this.originalTaskStatus = await this.taskDataService.populateFromTask(
+//     task,
+//     this.formData,
+//     this.priorityManager,
+//     this.contactManager,
+//     this.subtaskManager,
+//     this.contacts
+//   ) as 'to-do' | 'in-progress' | 'await-feedback' | 'done';
+// }
+
+// /**
+//  * Loads fresh subtasks from database
+//  */
+// private async loadFreshSubtasks(taskId: string): Promise<void> {
+//   this.subtaskManager.clearAll();
+//   await this.subtaskManager.loadAndSetSubtasks(taskId);
+// }
+
+// /**
+//  * Loads fresh images from storage
+//  */
+// private async loadFreshImages(imageKeys: string[]): Promise<void> {
+//   if (imageKeys.length > 0) {
+//     this.taskImages = [...imageKeys];
+//     this.uploadedImages = this.uploadService.getImagesByKeys(imageKeys);
+    
+//     // Update uploads component if available
+//     if (this.uploadsComponent) {
+//       this.uploadsComponent.setImages(this.uploadedImages);
+//     }
+//   }
+// }
+// ENDE!
+
   /**
    * Handles clicks outside of dropdowns to close them.
    * @param event - The click event.
