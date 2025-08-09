@@ -126,11 +126,11 @@ export class ContactService {
 
   getContacts(): Observable<Contact[]> {
     if (this.authService.isGuestUser()) {
-      // Für Gäste: Einmalig initialisieren, dann BehaviorSubject zurückgeben
+      
       this.initializeGuestContacts();
       return this.guestContactsSubject.asObservable();
     } else {
-      // Für registrierte User: Normal Firestore
+      
       return new Observable((observer) => {
         const unsubscribe = onSnapshot(
           this.getContactsRef(),
@@ -148,53 +148,21 @@ export class ContactService {
     }
   }
 
-  // private initializeGuestContacts(): void {
-  //   if (this.guestContactsInitialized) return;
-
-  //   this.guestContactsInitialized = true;
-
-  //   if (!localStorage.getItem(this.GUEST_CONTACTS_LOADED_KEY)) {
-  //     const unsubscribe = onSnapshot(
-  //       this.getContactsRef(),
-  //       (snapshot) => {
-  //         const contacts: Contact[] = [];
-  //         snapshot.forEach((doc) => {
-  //           contacts.push({ id: doc.id, ...doc.data() } as Contact);
-  //         });
-  //         localStorage.setItem(
-  //           this.GUEST_CONTACTS_KEY,
-  //           JSON.stringify(contacts)
-  //         );
-  //         localStorage.setItem(this.GUEST_CONTACTS_LOADED_KEY, 'true');
-  //         this.guestContactsSubject.next(contacts);
-
-  //         unsubscribe();
-  //       },
-  //       (error) => console.error('Error loading guest contacts:', error)
-  //     );
-  //   } else {
-  //     const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
-  //     const contacts: Contact[] = savedContacts
-  //       ? JSON.parse(savedContacts)
-  //       : [];
-  //     this.guestContactsSubject.next(contacts);
-  //   }
-  // }
 
   /**
    * Initialisiert Guest-Contacts einmalig
    */
   private initializeGuestContacts(): void {
     if (this.guestContactsInitialized) {
-      // Prüfen ob Local Storage Daten vorhanden sind
+      
       const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
       if (savedContacts) {
-        // Daten vorhanden: aus Local Storage laden
+        
         const contacts: Contact[] = JSON.parse(savedContacts);
         this.guestContactsSubject.next(contacts);
         return;
       } else {
-        // Keine Daten vorhanden (nach Logout): neu initialisieren
+        
         this.guestContactsInitialized = false;
       }
     }
