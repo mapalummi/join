@@ -137,10 +137,8 @@ export class TaskService {
    */
   private initializeGuestTasks(): void {
     if (this.guestTasksInitialized) {
-      
       const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
       if (savedTasks) {
-        
         let tasks: Task[] = JSON.parse(savedTasks);
         tasks = tasks.map((task) => ({
           ...task,
@@ -156,8 +154,11 @@ export class TaskService {
     this.guestTasksInitialized = true;
 
     if (!localStorage.getItem(this.GUEST_LOADED_KEY)) {
+      // FIX: Für ersten Guest-Login von Standard-Collection (dummy-tasks) laden
+      const standardTasksRef = collection(this.firestore, 'dummy-tasks');
+      
       const unsubscribe = onSnapshot(
-        this.getTasksRef(),
+        standardTasksRef,
         (snapshot) => {
           const tasks: Task[] = [];
           snapshot.forEach((doc) => {
@@ -176,7 +177,12 @@ export class TaskService {
 
           unsubscribe();
         },
-        (error) => console.error('Error loading guest tasks:', error)
+        (error) => {
+          console.error('Error loading guest tasks:', error);
+          // Fallback: Leeres Array bei Fehler
+          this.guestTasksSubject.next([]);
+          localStorage.setItem(this.GUEST_LOADED_KEY, 'true');
+        }
       );
     } else {
       const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);

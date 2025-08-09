@@ -202,8 +202,11 @@ export class ContactService {
     this.guestContactsInitialized = true;
 
     if (!localStorage.getItem(this.GUEST_CONTACTS_LOADED_KEY)) {
+      // FIX: Für ersten Guest-Login von Standard-Collection (dummy-contacts) laden
+      const standardContactsRef = collection(this.firestore, 'dummy-contacts');
+
       const unsubscribe = onSnapshot(
-        this.getContactsRef(),
+        standardContactsRef,
         (snapshot) => {
           const contacts: Contact[] = [];
           snapshot.forEach((doc) => {
@@ -219,7 +222,12 @@ export class ContactService {
 
           unsubscribe();
         },
-        (error) => console.error('Error loading guest contacts:', error)
+        (error) => {
+          console.error('Error loading guest contacts:', error);
+          // Fallback: Leeres Array bei Fehler
+          this.guestContactsSubject.next([]);
+          localStorage.setItem(this.GUEST_CONTACTS_LOADED_KEY, 'true');
+        }
       );
     } else {
       const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
