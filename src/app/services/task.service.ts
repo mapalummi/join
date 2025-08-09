@@ -154,7 +154,6 @@ export class TaskService {
     this.guestTasksInitialized = true;
 
     if (!localStorage.getItem(this.GUEST_LOADED_KEY)) {
-      // FIX: Für ersten Guest-Login von Standard-Collection (dummy-tasks) laden
       const standardTasksRef = collection(this.firestore, 'dummy-tasks');
       
       const unsubscribe = onSnapshot(
@@ -179,7 +178,6 @@ export class TaskService {
         },
         (error) => {
           console.error('Error loading guest tasks:', error);
-          // Fallback: Leeres Array bei Fehler
           this.guestTasksSubject.next([]);
           localStorage.setItem(this.GUEST_LOADED_KEY, 'true');
         }
