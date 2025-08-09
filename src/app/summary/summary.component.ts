@@ -28,7 +28,6 @@ interface FirestoreTimestamp {
     ]),
   ],
 })
-
 export class SummaryComponent implements OnInit {
   taskList: Task[] = [];
   userName: string = '';
@@ -118,6 +117,13 @@ export class SummaryComponent implements OnInit {
    */
   ngOnInit() {
     this.isMobile = window.innerWidth < 1000;
+
+    // NEU: Prüfe, ob User eingeloggt oder Gast ist
+    // if (!this.authService.isLoggedIn() && !this.authService.isGuestUser()) {
+    //   this.router.navigate(['/login']);
+    //   return;
+    // }
+
     this.loadUserGreeting();
     this.loadAndProcessTasks();
   }
@@ -127,7 +133,29 @@ export class SummaryComponent implements OnInit {
    * If on mobile and greeting hasn't been shown in this session,
    * triggers an animated greeting display.
    */
-  private loadUserGreeting(): void {
+  // private loadUserGreeting(): void {
+  //   this.authService.getCurrentUserData().then((userData) => {
+  //     this.userName = userData?.displayName?.trim()
+  //       ? userData.displayName
+  //       : 'Nice to see you!';
+  //     this.greeting = this.getGreeting();
+  //     const greetingShown = sessionStorage.getItem('greetingShown');
+  //     if (this.isMobile && !greetingShown) {
+  //       this.showAnimatedGreeting();
+  //     } else {
+  //       this.showGreeting = false;
+  //     }
+  //   });
+  // }
+
+  // TESTWEISE:
+  // Korrigierte loadUserGreeting-Methode
+private loadUserGreeting(): void {
+  if (this.authService.isGuestUser()) {
+    this.userName = 'Guest'; // Oder ein anderer passender Name
+    this.greeting = this.getGreeting();
+    this.showGreeting = false;
+  } else {
     this.authService.getCurrentUserData().then((userData) => {
       this.userName = userData?.displayName?.trim()
         ? userData.displayName
@@ -141,6 +169,7 @@ export class SummaryComponent implements OnInit {
       }
     });
   }
+}
 
   /**
    * Animates a greeting sequence for mobile devices.
@@ -171,39 +200,49 @@ export class SummaryComponent implements OnInit {
 
   /**
    * Sets the count of tasks by specific statuses and urgency.
-   * 
+   *
    * @param tasks - Array of task objects to be analyzed.
    */
   private setTaskCounts(tasks: Task[]): void {
     this.todoCount = this.countTasksByStatus(tasks, 'to-do');
     this.doneCount = this.countTasksByStatus(tasks, 'done');
     this.inProgressCount = this.countTasksByStatus(tasks, 'in-progress');
-    this.awaitingFeedbackCount = this.countTasksByStatus(tasks, 'await-feedback');
-    this.nextDeadlineCount = tasks.filter((t) => t.priority === 'urgent').length;
+    this.awaitingFeedbackCount = this.countTasksByStatus(
+      tasks,
+      'await-feedback'
+    );
+    this.nextDeadlineCount = tasks.filter(
+      (t) => t.priority === 'urgent'
+    ).length;
   }
 
   /**
    * Filters tasks to only include those with a valid future date and not marked as 'done'.
    * Parses the date string into a Date object.
-   * 
+   *
    * @param tasks - Array of task objects.
    * @param parseDate - A function that parses a date string into a Date object.
    * @returns An array of tasks with a valid future date, each including a `dateObj` field.
    */
-  private getFutureTasksWithDateObj(tasks: Task[], parseDate: (date: string) => Date | null): (Task & { dateObj: Date })[] {
+  private getFutureTasksWithDateObj(
+    tasks: Task[],
+    parseDate: (date: string) => Date | null
+  ): (Task & { dateObj: Date })[] {
     const now = new Date();
     return tasks
-    .filter((t) => t.date && t.status !== 'done')
-    .map((t) => {
-      const dateObj = this.parseDate(t.date!);
-      return { ...t, dateObj };
-    })
-    .filter((t): t is Task & { dateObj: Date } => !!t.dateObj && t.dateObj > now);
+      .filter((t) => t.date && t.status !== 'done')
+      .map((t) => {
+        const dateObj = this.parseDate(t.date!);
+        return { ...t, dateObj };
+      })
+      .filter(
+        (t): t is Task & { dateObj: Date } => !!t.dateObj && t.dateObj > now
+      );
   }
 
   /**
    * Returns the earliest date from an array of tasks with valid date objects.
-   * 
+   *
    * @param tasks - Array of tasks containing a `dateObj` property.
    * @returns The earliest Date object, or null if the array is empty.
    */
@@ -215,24 +254,28 @@ export class SummaryComponent implements OnInit {
 
   /**
    * Determines and sets the next upcoming deadline from the list of tasks.
-   * 
+   *
    * @param tasks - Array of task objects.
    */
   private setNextDeadline(tasks: Task[]): void {
-    const futureTasks = this.getFutureTasksWithDateObj(tasks, this.parseDate.bind(this));
+    const futureTasks = this.getFutureTasksWithDateObj(
+      tasks,
+      this.parseDate.bind(this)
+    );
     this.nextDeadlineDate = this.getEarliestDate(futureTasks);
   }
 
   /**
    * Converts a date value of various possible formats into a JavaScript Date object.
-   * 
+   *
    * @param date - Date input which could be a string, number, Date, or Firestore timestamp.
    * @returns A valid Date object or null if conversion is not possible.
    */
   private parseDate(date: any): Date | null {
     if (date instanceof Date) return date;
     if (this.isFirestoreTimestamp(date)) return date.toDate();
-    if (typeof date === 'string' || typeof date === 'number') return new Date(date);
+    if (typeof date === 'string' || typeof date === 'number')
+      return new Date(date);
     return null;
   }
 }
