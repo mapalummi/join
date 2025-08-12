@@ -144,6 +144,8 @@ export class AddTaskComponent implements OnInit, OnDestroy {
     }
   }
 
+
+
   /**
    * Handles clicks outside of dropdowns to close them.
    * @param event - The click event.
