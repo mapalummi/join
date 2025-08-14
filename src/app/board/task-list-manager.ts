@@ -11,6 +11,8 @@ import { Subscription } from 'rxjs';
 })
 
 export class TaskListManager {
+private subtaskSubscriptions: Subscription[] = [];
+
   private taskList: Task[] = [];
   private subtasksByTaskId: { [taskId: string]: Subtask[] } = {};
   private unsubTask!: Subscription;
@@ -200,12 +202,28 @@ export class TaskListManager {
   /**
    * Loads subtasks for each task and stores them in a lookup table by task ID.
    */
+  // private loadSubtasks(): void {
+  //   for (const task of this.taskList) {
+  //     if (task.id) {
+  //       this.taskService.getSubtasks(task.id).subscribe((subtasks) => {
+  //         this.subtasksByTaskId[task.id!] = subtasks;
+  //       });
+  //     }
+  //   }
+  // }
+
+  // NEU
   private loadSubtasks(): void {
+    // Vorherige Subtask-Subscriptions beenden
+    this.subtaskSubscriptions.forEach(sub => sub.unsubscribe());
+    this.subtaskSubscriptions = [];
+
     for (const task of this.taskList) {
       if (task.id) {
-        this.taskService.getSubtasks(task.id).subscribe((subtasks) => {
+        const sub = this.taskService.getSubtasks(task.id).subscribe((subtasks) => {
           this.subtasksByTaskId[task.id!] = subtasks;
         });
+        this.subtaskSubscriptions.push(sub);
       }
     }
   }
@@ -253,8 +271,15 @@ export class TaskListManager {
     if (this.unsubTask) {
       this.unsubTask.unsubscribe();
     }
+    // Alle Subtask-Subscriptions beenden!
+    this.subtaskSubscriptions.forEach(sub => sub.unsubscribe());
+    this.subtaskSubscriptions = [];
     this.emptyArrays();
     this.taskList = [];
     this.subtasksByTaskId = {};
   }
+
+  ngOnDestroy(): void {
+  console.log('TaskComponent destroyed');
+}
 }

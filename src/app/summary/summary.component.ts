@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { TaskService, Task } from '../services/task.service';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -10,6 +10,8 @@ import {
   transition,
   animate,
 } from '@angular/animations';
+
+import { Subscription } from 'rxjs';
 
 interface FirestoreTimestamp {
   toDate(): Date;
@@ -28,7 +30,9 @@ interface FirestoreTimestamp {
     ]),
   ],
 })
-export class SummaryComponent implements OnInit {
+export class SummaryComponent implements OnInit, OnDestroy {
+private taskSubscription?: Subscription;
+
   taskList: Task[] = [];
   userName: string = '';
   greetingState: 'start' | 'moved' = 'start';
@@ -190,8 +194,21 @@ private loadUserGreeting(): void {
   /**
    * Subscribes to task data and processes statistics and deadline information.
    */
+  // private loadAndProcessTasks(): void {
+  //   this.taskService.getTasks().subscribe((tasks: Task[]) => {
+  //     this.taskList = tasks;
+  //     this.setTaskCounts(tasks);
+  //     this.setNextDeadline(tasks);
+  //   });
+  // }
+
+  // NEU
   private loadAndProcessTasks(): void {
-    this.taskService.getTasks().subscribe((tasks: Task[]) => {
+    // Vorherige Subscription beenden, falls vorhanden
+    if (this.taskSubscription) {
+      this.taskSubscription.unsubscribe();
+    }
+    this.taskSubscription = this.taskService.getTasks().subscribe((tasks: Task[]) => {
       this.taskList = tasks;
       this.setTaskCounts(tasks);
       this.setNextDeadline(tasks);
@@ -277,5 +294,12 @@ private loadUserGreeting(): void {
     if (typeof date === 'string' || typeof date === 'number')
       return new Date(date);
     return null;
+  }
+
+  ngOnDestroy(): void {
+    if (this.taskSubscription) {
+      this.taskSubscription.unsubscribe();
+    }
+    console.log('SummaryComponent destroyed');
   }
 }

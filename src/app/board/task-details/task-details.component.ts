@@ -24,6 +24,8 @@ import { Contact } from '../../services/contact.service';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
+import { Subscription } from 'rxjs';
+
 @Component({
   selector: 'app-task-details',
   imports: [CommonModule, FormsModule],
@@ -31,6 +33,8 @@ import { FormsModule } from '@angular/forms';
   styleUrl: './task-details.component.scss',
 })
 export class TaskDetailsComponent {
+  private subtaskSubscription?: Subscription;
+
   /**
    * Emits an event when the task detail view should be closed.
    */
@@ -157,9 +161,24 @@ export class TaskDetailsComponent {
   /**
    * Loads subtasks associated with the current task from the database.
    */
+  // loadSubtasks() {
+  //   if (this.task?.id) {
+  //     this.taskService
+  //       .getSubtasks(this.task.id)
+  //       .subscribe((subtasks: Subtask[]) => {
+  //         this.subtasks = subtasks;
+  //       });
+  //   }
+  // }
+
+  // NEU
   loadSubtasks() {
     if (this.task?.id) {
-      this.taskService
+      // Vorherige Subscription beenden, falls vorhanden
+      if (this.subtaskSubscription) {
+        this.subtaskSubscription.unsubscribe();
+      }
+      this.subtaskSubscription = this.taskService
         .getSubtasks(this.task.id)
         .subscribe((subtasks: Subtask[]) => {
           this.subtasks = subtasks;
@@ -181,5 +200,12 @@ export class TaskDetailsComponent {
         }
       }
     }
+  }
+
+  ngOnDestroy(): void {
+    if (this.subtaskSubscription) {
+      this.subtaskSubscription.unsubscribe();
+    }
+    console.log('TaskDetailsComponent destroyed');
   }
 }

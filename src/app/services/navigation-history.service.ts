@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
 
+import { Subscription } from 'rxjs';
+
 /**
  * A service to keep track of recent navigation history within the Angular application.
  * 
@@ -16,6 +18,8 @@ export class NavigationHistoryService {
   /** Internal array holding the last 3 visited URLs */
   private history: string[] = [];
 
+  private routerSubscription: Subscription;
+
   /**
    * Subscribes to Angular Router events and tracks navigation history.
    * 
@@ -24,12 +28,24 @@ export class NavigationHistoryService {
    * 
    * @param router - Angular Router used to listen to navigation events.
    */
+  // constructor(private router: Router) {
+  //   this.router.events
+  //     .pipe(filter(event => event instanceof NavigationEnd))
+  //     .subscribe((event: NavigationEnd) => {
+  //       if (this.history.length === 3) {
+  //         this.history.shift(); // Remove the oldest URL
+  //       }
+  //       this.history.push(event.urlAfterRedirects);
+  //     });
+  // }
+
+  // NEU
   constructor(private router: Router) {
-    this.router.events
+    this.routerSubscription = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
         if (this.history.length === 3) {
-          this.history.shift(); // Remove the oldest URL
+          this.history.shift();
         }
         this.history.push(event.urlAfterRedirects);
       });
@@ -68,5 +84,12 @@ export class NavigationHistoryService {
     } else {
       this.router.navigateByUrl('/');
     }
+  }
+
+  ngOnDestroy(): void {
+    if (this.routerSubscription) {
+      this.routerSubscription.unsubscribe();
+    }
+    console.log('NavigationHistoryService destroyed');
   }
 }

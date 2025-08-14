@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { TaskService, Task } from '../services/task.service';
 import { AuthService } from '../services/auth.service';
 
+import { Subscription } from 'rxjs';
+
 export interface Subtask {
   id: string | number;
   text: string;
@@ -16,6 +18,8 @@ export interface Subtask {
   providedIn: 'root',
 })
 export class SubtaskManager {
+  private subtaskSubscription?: Subscription;
+
   private subtasks: Subtask[] = [];
   private nextSubtaskId: number = 1;
   private editingSubtaskId: string | number | null = null;
@@ -434,8 +438,25 @@ export class SubtaskManager {
    *
    * @param taskId - The ID of the task whose subtasks should be loaded.
    */
+  // public loadAndSetSubtasks(taskId: string): void {
+  //   this.taskService.getSubtasks(taskId).subscribe((subtasks) => {
+  //     const mappedSubtasks = subtasks.map((subtask) => ({
+  //       id: subtask.id || '',
+  //       text: subtask.title,
+  //       completed: subtask.isCompleted,
+  //     }));
+  //     this.setSubtasks(mappedSubtasks);
+  //     this.originalSubtasks = [...mappedSubtasks];
+  //   });
+  // }
+
+  // NEU
   public loadAndSetSubtasks(taskId: string): void {
-    this.taskService.getSubtasks(taskId).subscribe((subtasks) => {
+    // Vorherige Subscription beenden, falls vorhanden
+    if (this.subtaskSubscription) {
+      this.subtaskSubscription.unsubscribe();
+    }
+    this.subtaskSubscription = this.taskService.getSubtasks(taskId).subscribe((subtasks) => {
       const mappedSubtasks = subtasks.map((subtask) => ({
         id: subtask.id || '',
         text: subtask.title,
@@ -444,5 +465,12 @@ export class SubtaskManager {
       this.setSubtasks(mappedSubtasks);
       this.originalSubtasks = [...mappedSubtasks];
     });
+  }
+
+ ngOnDestroy(): void {
+    if (this.subtaskSubscription) {
+      this.subtaskSubscription.unsubscribe();
+    }
+    console.log('SubtaskManager destroyed');
   }
 }

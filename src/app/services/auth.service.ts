@@ -181,7 +181,6 @@ export class AuthService {
   private clearAllGuestData(): void {
     localStorage.removeItem('guest-tasks');
     localStorage.removeItem('guest-tasks-loaded');
-
     localStorage.removeItem('guest-contacts');
     localStorage.removeItem('guest-contacts-loaded');
   }

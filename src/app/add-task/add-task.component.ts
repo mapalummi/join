@@ -11,6 +11,8 @@ import { PriorityManager } from './priority-manager';
 import { FormValidatorService, FormData, ValidationErrors } from './form-validator.service';
 import { TaskDataService } from './task-data.service';
 
+import { Subscription } from 'rxjs';
+
 /**
  * AddTaskComponent provides a comprehensive form for creating and editing tasks.
  * It supports task creation with priority, category, assigned contacts, due dates and subtasks.
@@ -32,6 +34,8 @@ import { TaskDataService } from './task-data.service';
 })
 
 export class AddTaskComponent implements OnInit, OnDestroy {
+  private subscriptions: Subscription[] = [];
+  
   @Output() taskAdded = new EventEmitter<string>;
   @Output() closeOverlay = new EventEmitter<void>();
   @Input() defaultStatus = '';
@@ -89,6 +93,9 @@ export class AddTaskComponent implements OnInit, OnDestroy {
    */
   ngOnDestroy() {
     this.clearForm();
+    // Alle Subscriptions beenden!
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+    console.log('TaskComponent destroyed');
   }
 
   /**
@@ -105,11 +112,20 @@ export class AddTaskComponent implements OnInit, OnDestroy {
   /**
    * Loads all contacts from the ContactService and then loads any task being edited.
    */
+  // async loadContacts() {
+  //   this.contactService.getContacts().subscribe(async contacts => {
+  //     this.contacts = contacts;
+  //     await this.loadEditingTask();
+  //   });
+  // }
+
+  // NEU
   async loadContacts() {
-    this.contactService.getContacts().subscribe(async contacts => {
+    const sub = this.contactService.getContacts().subscribe(async contacts => {
       this.contacts = contacts;
       await this.loadEditingTask();
     });
+    this.subscriptions.push(sub);
   }
 
   /**
