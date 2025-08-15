@@ -110,11 +110,9 @@ export class TaskService {
    */
   getTasks(): Observable<Task[]> {
     if (this.authService.isGuestUser()) {
-      
       this.initializeGuestTasks();
       return this.guestTasksSubject.asObservable();
     } else {
-      
       return new Observable((observer) => {
         const unsubscribe = onSnapshot(
           this.getTasksRef(),
@@ -125,7 +123,15 @@ export class TaskService {
             });
             observer.next(tasks);
           },
-          (error) => observer.error(error)
+          (error) => {
+            console.error(
+              'Firestore error in getTasks:',
+              error,
+              'User:',
+              this.authService.currentUser$
+            );
+            observer.error(error);
+          }
         );
         return () => unsubscribe();
       });
@@ -155,7 +161,7 @@ export class TaskService {
 
     if (!localStorage.getItem(this.GUEST_LOADED_KEY)) {
       const standardTasksRef = collection(this.firestore, 'dummy-tasks');
-      
+
       const unsubscribe = onSnapshot(
         standardTasksRef,
         (snapshot) => {
@@ -228,9 +234,16 @@ export class TaskService {
             });
             observer.next(subtasks);
           },
-          (error) => observer.error(error)
+          (error) => {
+            console.error(
+              'Firestore error in getTasks:',
+              error,
+              'User:',
+              this.authService.currentUser$
+            );
+            observer.error(error);
+          }
         );
-
         return () => unsubscribe();
       });
     }

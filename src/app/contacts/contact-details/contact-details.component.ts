@@ -160,23 +160,6 @@ export class ContactDetailsComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Matches the selected contact with the full contact list to ensure it exists.
-   * Falls back to the selected contact if no match is found.
-   *
-   * @param selected - The selected contact object.
-   * @param all - All available contacts.
-   * @returns A resolved contact object or null.
-   */
-  // private resolveSelectedContact(
-  //   selected: Contact | null,
-  //   all: Contact[]
-  // ): Contact | null {
-  //   if (!selected) return null;
-  //   return all.find((c) => c.id === selected.id) || selected;
-  // }
-
-  // NEU:
-  /**
  * Matches the selected contact with the full contact list to ensure it exists.
  * Falls back to the selected contact if no match is found.
  *
@@ -237,24 +220,8 @@ private resolveSelectedContact(
    *
    * @param wasEmpty - Indicates if the previous contact was undefined.
    */
-  
-  // private prepareContactTransition(wasEmpty: boolean): void {
-  //   this.isEditing = false;
-  //   if (!this.isDeleting && (this.firstLoad || wasEmpty)) {
-  //     this.contactVisible = false;
-  //     setTimeout(() => {
-  //       this.contactVisible = true;
-  //       this.animationState++;
-  //       this.firstLoad = false;
-  //     }, 10);
-  //   }
-  // }
-
-  //NOTE:
-  //Geänderte Funktion
   private prepareContactTransition(wasEmpty: boolean): void {
     this.isEditing = false;
-    // Animation immer triggern, wenn Kontakt gewechselt wird
     this.contactVisible = false;
     setTimeout(() => {
       this.contactVisible = true;
@@ -271,6 +238,7 @@ private resolveSelectedContact(
     if (this.subscription) {
       this.subscription.unsubscribe();
     }
+    console.log('ContactdetailsComponent destroyed');
   }
 
   /**

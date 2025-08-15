@@ -3,6 +3,7 @@ import {
   ViewEncapsulation,
   ViewChild,
   ElementRef,
+  OnDestroy,
 } from '@angular/core';
 import { TaskComponent } from './task/task.component';
 import {
@@ -94,7 +95,7 @@ import { OverlayManager } from './overlay-manager';
  * - Responsive design (mobile / desktop behavior)
  */
 
-export class BoardComponent {
+export class BoardComponent implements OnDestroy {
   searchTerm: string = '';
   unsubTask!: Subscription;
   unsubSubtask!: Subscription;
@@ -397,5 +398,10 @@ export class BoardComponent {
    */
   onDragMoved(event: CdkDragMove) {
     this.dragDropManager.handleDragMove(event, this.scrollSection);
+  }
+
+  ngOnDestroy(): void {
+    this.taskListManager.destroy();
+    console.log('BoardComponent destroyed');
   }
 }
