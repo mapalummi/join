@@ -405,6 +405,6 @@ export class BoardComponent implements OnDestroy {
    */
   ngOnDestroy(): void {
     this.taskListManager.destroy();
-    console.log('BoardComponent destroyed');
+    // console.log('BoardComponent destroyed');
   }
 }

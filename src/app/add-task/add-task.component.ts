@@ -109,7 +109,7 @@ export class AddTaskComponent implements OnInit, OnDestroy {
     this.clearForm();
     // Alle Subscriptions beenden!
     this.subscriptions.forEach((sub) => sub.unsubscribe());
-    console.log('TaskComponent destroyed');
+    // console.log('TaskComponent destroyed');
   }
 
   /**

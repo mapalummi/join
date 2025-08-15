@@ -279,6 +279,6 @@ export class SummaryComponent implements OnInit, OnDestroy {
     if (this.taskSubscription) {
       this.taskSubscription.unsubscribe();
     }
-    console.log('SummaryComponent destroyed');
+    // console.log('SummaryComponent destroyed');
   }
 }

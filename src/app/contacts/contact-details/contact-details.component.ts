@@ -237,7 +237,7 @@ export class ContactDetailsComponent implements OnInit, OnDestroy {
     if (this.subscription) {
       this.subscription.unsubscribe();
     }
-    console.log('ContactdetailsComponent destroyed');
+    // console.log('ContactdetailsComponent destroyed');
   }
 
   /**
