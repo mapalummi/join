@@ -7,12 +7,10 @@ import { Subscription } from 'rxjs';
  * This includes loading, filtering, sorting, and managing task lists by status.
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
-
 export class TaskListManager {
-private subtaskSubscriptions: Subscription[] = [];
-
+  private subtaskSubscriptions: Subscription[] = [];
   private taskList: Task[] = [];
   private subtasksByTaskId: { [taskId: string]: Subtask[] } = {};
   private unsubTask!: Subscription;
@@ -21,7 +19,7 @@ private subtaskSubscriptions: Subscription[] = [];
   private awaitfeedback: Task[] = [];
   private done: Task[] = [];
 
-  constructor(private taskService: TaskService) { }
+  constructor(private taskService: TaskService) {}
 
   /**
    * Gets all tasks
@@ -63,10 +61,10 @@ private subtaskSubscriptions: Subscription[] = [];
    * @param searchTerm - Search term to filter by.
    * @returns Filtered list of tasks.
    */
-    getFilteredTasks(status: string, searchTerm: string): Task[] {
-      const tasksForStatus = this.getTasksByStatus(status);
-      return this.filterTasksBySearchTerm(tasksForStatus, searchTerm);
-    }
+  getFilteredTasks(status: string, searchTerm: string): Task[] {
+    const tasksForStatus = this.getTasksByStatus(status);
+    return this.filterTasksBySearchTerm(tasksForStatus, searchTerm);
+  }
 
   /**
    * Returns tasks from the internal status arrays based on status key.
@@ -79,7 +77,7 @@ private subtaskSubscriptions: Subscription[] = [];
       'to-do': this.todo,
       'in-progress': this.inprogress,
       'await-feedback': this.awaitfeedback,
-      'done': this.done,
+      done: this.done,
     };
     return statusArrayMap[status] || [];
   }
@@ -94,9 +92,10 @@ private subtaskSubscriptions: Subscription[] = [];
   private filterTasksBySearchTerm(tasks: Task[], searchTerm: string): Task[] {
     const trimmed = searchTerm.trim().toLowerCase();
     if (!trimmed) return tasks;
-    return tasks.filter(task =>
-      task.title.toLowerCase().includes(trimmed) ||
-      task.description?.toLowerCase().includes(trimmed)
+    return tasks.filter(
+      (task) =>
+        task.title.toLowerCase().includes(trimmed) ||
+        task.description?.toLowerCase().includes(trimmed)
     );
   }
 
@@ -168,10 +167,18 @@ private subtaskSubscriptions: Subscription[] = [];
     this.emptyArrays();
     for (const task of tasks) {
       switch (task.status) {
-        case 'to-do': this.todo.push(task); break;
-        case 'in-progress': this.inprogress.push(task); break;
-        case 'await-feedback': this.awaitfeedback.push(task); break;
-        case 'done': this.done.push(task); break;
+        case 'to-do':
+          this.todo.push(task);
+          break;
+        case 'in-progress':
+          this.inprogress.push(task);
+          break;
+        case 'await-feedback':
+          this.awaitfeedback.push(task);
+          break;
+        case 'done':
+          this.done.push(task);
+          break;
         default:
           console.warn(`Unknown status in task ${task.title}:`, task.status);
       }
@@ -188,7 +195,6 @@ private subtaskSubscriptions: Subscription[] = [];
     this.done = this.sortTasksByDueDate(this.done);
   }
 
-
   /**
    * Empties all task lists (to-do, in-progress, await-feedback, done).
    */
@@ -202,27 +208,17 @@ private subtaskSubscriptions: Subscription[] = [];
   /**
    * Loads subtasks for each task and stores them in a lookup table by task ID.
    */
-  // private loadSubtasks(): void {
-  //   for (const task of this.taskList) {
-  //     if (task.id) {
-  //       this.taskService.getSubtasks(task.id).subscribe((subtasks) => {
-  //         this.subtasksByTaskId[task.id!] = subtasks;
-  //       });
-  //     }
-  //   }
-  // }
-
-  // NEU
   private loadSubtasks(): void {
-    // Vorherige Subtask-Subscriptions beenden
-    this.subtaskSubscriptions.forEach(sub => sub.unsubscribe());
+    this.subtaskSubscriptions.forEach((sub) => sub.unsubscribe());
     this.subtaskSubscriptions = [];
 
     for (const task of this.taskList) {
       if (task.id) {
-        const sub = this.taskService.getSubtasks(task.id).subscribe((subtasks) => {
-          this.subtasksByTaskId[task.id!] = subtasks;
-        });
+        const sub = this.taskService
+          .getSubtasks(task.id)
+          .subscribe((subtasks) => {
+            this.subtasksByTaskId[task.id!] = subtasks;
+          });
         this.subtaskSubscriptions.push(sub);
       }
     }
@@ -271,15 +267,18 @@ private subtaskSubscriptions: Subscription[] = [];
     if (this.unsubTask) {
       this.unsubTask.unsubscribe();
     }
-    // Alle Subtask-Subscriptions beenden!
-    this.subtaskSubscriptions.forEach(sub => sub.unsubscribe());
+    this.subtaskSubscriptions.forEach((sub) => sub.unsubscribe());
     this.subtaskSubscriptions = [];
     this.emptyArrays();
     this.taskList = [];
     this.subtasksByTaskId = {};
   }
 
+  /**
+   * Angular lifecycle hook that is called when the TaskListManager service is destroyed.
+   * Can be used for cleanup or debugging purposes.
+   */
   ngOnDestroy(): void {
-  console.log('TaskComponent destroyed');
-}
+    console.log('TaskComponent destroyed');
+  }
 }

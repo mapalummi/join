@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { TaskService, Task } from '../services/task.service';
 import { AuthService } from '../services/auth.service';
-
 import { Subscription } from 'rxjs';
 
 export interface Subtask {
@@ -34,14 +33,15 @@ export class SubtaskManager {
   ) {}
 
   /**
-   * Gets all subtasks
+   * Returns the current array of subtasks.
    */
   getSubtasks(): Subtask[] {
     return this.subtasks;
   }
 
   /**
-   * Sets the subtasks array
+   * Sets the internal subtasks array and updates the next subtask ID.
+   * @param subtasks - The array of subtasks to set.
    */
   setSubtasks(subtasks: Subtask[]): void {
     this.subtasks = subtasks;
@@ -49,56 +49,59 @@ export class SubtaskManager {
   }
 
   /**
-   * Gets the current subtask input value
+   * Returns the current value of the subtask input field.
    */
   getSubtaskInput(): string {
     return this.subtaskInput;
   }
 
   /**
-   * Sets the subtask input value
+   * Sets the value of the subtask input field.
+   * @param value - The new value for the subtask input.
    */
   setSubtaskInput(value: string): void {
     this.subtaskInput = value;
   }
 
   /**
-   * Gets the subtask confirmation state
+   * Returns whether the subtask confirmation dialog is shown.
    */
   getShowSubtaskConfirmation(): boolean {
     return this.showSubtaskConfirmation;
   }
 
   /**
-   * Sets the subtask confirmation state
+   * Sets the state of the subtask confirmation dialog.
+   * @param value - True to show the confirmation, false to hide.
    */
   setShowSubtaskConfirmation(value: boolean): void {
     this.showSubtaskConfirmation = value;
   }
 
   /**
-   * Gets the editing subtask ID
+   * Returns the ID of the subtask currently being edited, or null if none.
    */
   getEditingSubtaskId(): string | number | null {
     return this.editingSubtaskId;
   }
 
   /**
-   * Gets the editing subtask text
+   * Returns the text of the subtask currently being edited.
    */
   getEditingSubtaskText(): string {
     return this.editingSubtaskText;
   }
 
   /**
-   * Sets the editing subtask text
+   * Sets the text for the subtask currently being edited.
+   * @param value - The new text for the subtask.
    */
   setEditingSubtaskText(value: string): void {
     this.editingSubtaskText = value;
   }
 
   /**
-   * Handles subtask input click to clear the input if confirmation is not shown.
+   * Handles a click on the subtask input field, clearing it if confirmation is not shown.
    */
   onSubtaskInputClick(): void {
     if (!this.showSubtaskConfirmation) {
@@ -107,7 +110,7 @@ export class SubtaskManager {
   }
 
   /**
-   * Handles Enter key press on subtask input to add the subtask.
+   * Handles the Enter key press on the subtask input to add a new subtask.
    * @param event - The keyboard event.
    */
   onSubtaskEnter(event: Event): void {
@@ -118,7 +121,7 @@ export class SubtaskManager {
   }
 
   /**
-   * Confirms and adds the subtask.
+   * Confirms and adds the current subtask input as a new subtask.
    * @param event - The event that triggered the confirmation.
    */
   confirmSubtask(event: Event): void {
@@ -131,7 +134,7 @@ export class SubtaskManager {
   }
 
   /**
-   * Cancels subtask creation and clears the input.
+   * Cancels subtask creation and clears the input field.
    */
   cancelSubtask(): void {
     this.subtaskInput = '';
@@ -139,7 +142,7 @@ export class SubtaskManager {
   }
 
   /**
-   * Adds a new subtask to the task.
+   * Adds a new subtask to the internal subtasks array using the current input value.
    */
   addSubtask(): void {
     if (this.subtaskInput && this.subtaskInput.trim()) {
@@ -155,7 +158,7 @@ export class SubtaskManager {
   }
 
   /**
-   * Deletes a subtask by its ID.
+   * Deletes a subtask by its ID from the internal subtasks array.
    * @param id - The ID of the subtask to delete.
    */
   deleteSubtask(id: string | number): void {
@@ -163,7 +166,7 @@ export class SubtaskManager {
   }
 
   /**
-   * Edits the text of a subtask.
+   * Updates the text of a subtask by its ID.
    * @param id - The ID of the subtask to edit.
    * @param newText - The new text for the subtask.
    */
@@ -175,7 +178,7 @@ export class SubtaskManager {
   }
 
   /**
-   * Initiates editing mode for a subtask.
+   * Initiates editing mode for a subtask, setting up the editing state and focusing the input.
    * @param id - The ID of the subtask to edit.
    * @param currentText - The current text of the subtask.
    */
@@ -198,7 +201,7 @@ export class SubtaskManager {
   }
 
   /**
-   * Saves the edited subtask text.
+   * Saves the edited subtask text and exits editing mode.
    */
   saveSubtaskEdit(): void {
     if (this.editingSubtaskId !== null) {
@@ -210,7 +213,7 @@ export class SubtaskManager {
   }
 
   /**
-   * Cancels subtask editing mode.
+   * Cancels subtask editing mode and clears the editing state.
    */
   cancelSubtaskEdit(): void {
     this.editingSubtaskId = null;
@@ -218,7 +221,7 @@ export class SubtaskManager {
   }
 
   /**
-   * Handles keyboard shortcuts for subtask editing.
+   * Handles keyboard shortcuts (Enter/Escape) for subtask editing.
    * @param event - The keyboard event.
    */
   onSubtaskEditKeydown(event: KeyboardEvent): void {
@@ -232,7 +235,7 @@ export class SubtaskManager {
   }
 
   /**
-   * Toggles the completion state of a subtask.
+   * Toggles the completion state of a subtask by its ID.
    * @param id - The ID of the subtask to toggle.
    */
   toggleSubtaskCompletion(id: string | number): void {
@@ -243,7 +246,7 @@ export class SubtaskManager {
   }
 
   /**
-   * Clears all subtask data and resets to default state.
+   * Clears all subtask data and resets the manager to its default state.
    */
   clearAll(): void {
     this.subtasks = [];
@@ -274,7 +277,11 @@ export class SubtaskManager {
   }
 
   /**
-   * Speichert alle Subtasks für Guest-User direkt im Task-Objekt
+   * Saves the provided subtasks for a guest user by updating the local storage.
+   * Updates the subtasks of the specified task and notifies the TaskService about the change.
+   *
+   * @param taskId - The ID of the task to which the subtasks belong.
+   * @param subtasks - The list of subtasks to be saved.
    */
   private async saveGuestSubtasks(
     taskId: string,
@@ -304,7 +311,10 @@ export class SubtaskManager {
   }
 
   /**
-   * Benachrichtigt den TaskService über die Aktualisierung
+   * Notifies the TaskService about updates to the guest tasks.
+   * Pushes the updated tasks array to the guestTasksSubject so that all subscribers receive the changes.
+   *
+   * @param tasks - The updated list of guest tasks.
    */
   private async notifyTaskServiceUpdate(tasks: Task[]): Promise<void> {
     try {
@@ -349,9 +359,6 @@ export class SubtaskManager {
     }
   }
 
-  /**
-   * Löscht Subtasks für Guest-User aus dem Local Storage
-   */
   private async deleteGuestSubtasks(
     taskId: string,
     subtasks: any[]
@@ -396,7 +403,11 @@ export class SubtaskManager {
   }
 
   /**
-   * Synchronisiert Subtasks für Guest-User im Local Storage
+   * Synchronizes the provided subtasks for a guest user by updating local storage.
+   * Updates or adds subtasks for the specified task and notifies the TaskService about the change.
+   *
+   * @param taskId - The ID of the task to synchronize subtasks for.
+   * @param subtasks - The list of subtasks to synchronize.
    */
   private async syncGuestSubtasks(
     taskId: string,
@@ -438,36 +449,28 @@ export class SubtaskManager {
    *
    * @param taskId - The ID of the task whose subtasks should be loaded.
    */
-  // public loadAndSetSubtasks(taskId: string): void {
-  //   this.taskService.getSubtasks(taskId).subscribe((subtasks) => {
-  //     const mappedSubtasks = subtasks.map((subtask) => ({
-  //       id: subtask.id || '',
-  //       text: subtask.title,
-  //       completed: subtask.isCompleted,
-  //     }));
-  //     this.setSubtasks(mappedSubtasks);
-  //     this.originalSubtasks = [...mappedSubtasks];
-  //   });
-  // }
-
-  // NEU
   public loadAndSetSubtasks(taskId: string): void {
-    // Vorherige Subscription beenden, falls vorhanden
     if (this.subtaskSubscription) {
       this.subtaskSubscription.unsubscribe();
     }
-    this.subtaskSubscription = this.taskService.getSubtasks(taskId).subscribe((subtasks) => {
-      const mappedSubtasks = subtasks.map((subtask) => ({
-        id: subtask.id || '',
-        text: subtask.title,
-        completed: subtask.isCompleted,
-      }));
-      this.setSubtasks(mappedSubtasks);
-      this.originalSubtasks = [...mappedSubtasks];
-    });
+    this.subtaskSubscription = this.taskService
+      .getSubtasks(taskId)
+      .subscribe((subtasks) => {
+        const mappedSubtasks = subtasks.map((subtask) => ({
+          id: subtask.id || '',
+          text: subtask.title,
+          completed: subtask.isCompleted,
+        }));
+        this.setSubtasks(mappedSubtasks);
+        this.originalSubtasks = [...mappedSubtasks];
+      });
   }
 
- ngOnDestroy(): void {
+  /**
+   * Cleans up the subtask subscription when the SubtaskManager is destroyed.
+   * Ensures that no Firestore listeners remain active.
+   */
+  ngOnDestroy(): void {
     if (this.subtaskSubscription) {
       this.subtaskSubscription.unsubscribe();
     }

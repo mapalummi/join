@@ -139,7 +139,10 @@ export class TaskService {
   }
 
   /**
-   * Initialisiert Guest-Tasks einmalig
+   * Initializes guest tasks by loading them from local storage or, if not present,
+   * from the Firestore 'dummy-tasks' collection. Ensures that guest users have
+   * a default set of tasks and keeps the guestTasksSubject updated.
+   * Called when a guest user accesses tasks for the first time in a session.
    */
   private initializeGuestTasks(): void {
     if (this.guestTasksInitialized) {
@@ -561,10 +564,14 @@ export class TaskService {
   }
 
   /**
-   * Hilfsmethode: Stellt sicher, dass ein Datum gültig ist
+   * Ensures that the provided value is a valid JavaScript Date object.
+   * Converts Firestore Timestamps or ISO date strings to Date objects.
+   * If the value is invalid, returns the current date as a fallback.
+   *
+   * @param date - The value to validate and convert (Date, Timestamp, or string).
+   * @returns A valid Date object.
    */
   private ensureValidDate(date: Date | Timestamp | string): Date {
-    // Wenn es bereits ein gültiges Date ist
     if (date instanceof Date && !isNaN(date.getTime())) {
       return date;
     }

@@ -94,7 +94,6 @@ import { OverlayManager } from './overlay-manager';
  * - Contact integration for assigning collaborators
  * - Responsive design (mobile / desktop behavior)
  */
-
 export class BoardComponent implements OnDestroy {
   searchTerm: string = '';
   unsubTask!: Subscription;
@@ -172,7 +171,7 @@ export class BoardComponent implements OnDestroy {
     private taskListManager: TaskListManager,
     private dragDropManager: DragDropManager,
     private overlayManager: OverlayManager
-  ) { }
+  ) {}
 
   /**
    * Reference to the scrollable board section element.
@@ -222,7 +221,7 @@ export class BoardComponent implements OnDestroy {
   /**
    * Placeholder for handling user input in the search field.
    */
-  onSearchInput() { }
+  onSearchInput() {}
 
   /**
    * Filters tasks by given status and current search term (case-insensitive).
@@ -331,11 +330,11 @@ export class BoardComponent implements OnDestroy {
   }
 
   /**
-  * Returns the subtasks for a given task ID.
-  *
-  * @param taskId - The ID of the task to retrieve subtasks for.
-  * @returns Array of subtasks, or an empty array if none exist.
-  */
+   * Returns the subtasks for a given task ID.
+   *
+   * @param taskId - The ID of the task to retrieve subtasks for.
+   * @returns Array of subtasks, or an empty array if none exist.
+   */
   getSubtasksForTask(taskId: string | undefined): Subtask[] {
     return this.taskListManager.getSubtasksForTask(taskId);
   }
@@ -400,6 +399,10 @@ export class BoardComponent implements OnDestroy {
     this.dragDropManager.handleDragMove(event, this.scrollSection);
   }
 
+  /**
+   * Angular lifecycle hook that is called when the BoardComponent is destroyed.
+   * Cleans up resources by destroying the TaskListManager and logs the destruction.
+   */
   ngOnDestroy(): void {
     this.taskListManager.destroy();
     console.log('BoardComponent destroyed');

@@ -161,17 +161,6 @@ export class TaskDetailsComponent {
   /**
    * Loads subtasks associated with the current task from the database.
    */
-  // loadSubtasks() {
-  //   if (this.task?.id) {
-  //     this.taskService
-  //       .getSubtasks(this.task.id)
-  //       .subscribe((subtasks: Subtask[]) => {
-  //         this.subtasks = subtasks;
-  //       });
-  //   }
-  // }
-
-  // NEU
   loadSubtasks() {
     if (this.task?.id) {
       // Vorherige Subscription beenden, falls vorhanden
@@ -202,6 +191,10 @@ export class TaskDetailsComponent {
     }
   }
 
+  /**
+   * Angular lifecycle hook that is called when the TaskDetailsComponent is destroyed.
+   * Cleans up the subtask subscription to prevent memory leaks and unwanted Firestore listeners.
+   */
   ngOnDestroy(): void {
     if (this.subtaskSubscription) {
       this.subtaskSubscription.unsubscribe();

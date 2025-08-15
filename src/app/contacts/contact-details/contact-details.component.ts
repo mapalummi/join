@@ -160,30 +160,29 @@ export class ContactDetailsComponent implements OnInit, OnDestroy {
   }
 
   /**
- * Matches the selected contact with the full contact list to ensure it exists.
- * Falls back to the selected contact if no match is found.
- *
- * @param selected - The selected contact object.
- * @param all - All available contacts.
- * @returns A resolved contact object or null.
- */
-private resolveSelectedContact(
-  selected: Contact | null,
-  all: Contact[]
-): Contact | null {
-  if (!selected) return null;
-  
-  // NEU: Prüfen ob der Kontakt noch in der aktuellen Liste existiert
-  const found = all.find((c) => c.id === selected.id);
-  
-  // Wenn nicht gefunden (z.B. nach Guest-Logout), null zurückgeben
-  if (!found) {
-    console.log('Selected contact not found in current list, clearing selection');
-    return null;
+   * Matches the selected contact with the full contact list to ensure it exists.
+   * Falls back to the selected contact if no match is found.
+   *
+   * @param selected - The selected contact object.
+   * @param all - All available contacts.
+   * @returns A resolved contact object or null.
+   */
+  private resolveSelectedContact(
+    selected: Contact | null,
+    all: Contact[]
+  ): Contact | null {
+    if (!selected) return null;
+
+    const found = all.find((c) => c.id === selected.id);
+
+    if (!found) {
+      console.log(
+        'Selected contact not found in current list, clearing selection'
+      );
+      return null;
+    }
+    return found;
   }
-  
-  return found;
-}
 
   /**
    * Handles contact changes, visibility state, and animations.
