@@ -4,6 +4,7 @@ import {
   ViewChild,
   ElementRef,
   OnDestroy,
+  OnInit,
 } from '@angular/core';
 import { TaskComponent } from './task/task.component';
 import {
@@ -94,7 +95,7 @@ import { OverlayManager } from './overlay-manager';
  * - Contact integration for assigning collaborators
  * - Responsive design (mobile / desktop behavior)
  */
-export class BoardComponent implements OnDestroy {
+export class BoardComponent implements OnInit, OnDestroy {
   searchTerm: string = '';
   unsubTask!: Subscription;
   unsubSubtask!: Subscription;
@@ -170,7 +171,8 @@ export class BoardComponent implements OnDestroy {
   constructor(
     private taskListManager: TaskListManager,
     private dragDropManager: DragDropManager,
-    private overlayManager: OverlayManager
+    private overlayManager: OverlayManager,
+    private contactService: ContactService // <--- Kontaktservice injizieren
   ) {}
 
   /**
@@ -215,6 +217,10 @@ export class BoardComponent implements OnDestroy {
     this.overlayManager.setAnimationDirection(window.innerWidth);
     window.addEventListener('resize', () => {
       this.overlayManager.setAnimationDirection(window.innerWidth);
+    });
+    // Kontakte direkt beim Initialisieren laden:
+    this.contactService.getContacts().subscribe(contacts => {
+      this.contactList = contacts;
     });
   }
 
@@ -353,9 +359,9 @@ export class BoardComponent implements OnDestroy {
    *
    * @param contactList - Array of contact objects to store.
    */
-  getContactList(contactList: Contact[]) {
-    this.contactList = contactList;
-  }
+  // getContactList(contactList: Contact[]) {
+  //   this.contactList = contactList;
+  // }
 
   /**
    * Replaces the subtask list with a new array of updated subtasks.

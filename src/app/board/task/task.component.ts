@@ -49,6 +49,9 @@ export class TaskComponent {
    */
   @Input() task!: Task;
 
+  // NEU
+  @Input() contacts: Contact[] = [];
+
   /**
    * The list of subtasks associated with the task.
    */
@@ -62,7 +65,7 @@ export class TaskComponent {
   /**
    * Emits the list of resolved contacts associated with the task.
    */
-  @Output() contacts = new EventEmitter<Contact[]>();
+  // @Output() contacts = new EventEmitter<Contact[]>();
 
   /**
    * Holds the task currently selected to open its detail view.
@@ -125,7 +128,7 @@ export class TaskComponent {
    * Lifecycle hook that loads the contact list for the task on component init.
    */
   ngOnInit(): void {
-    this.getContactList();
+    // this.getContactList();
   }
 
   /**
@@ -138,7 +141,7 @@ export class TaskComponent {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['task'] && !changes['task'].firstChange) {
       this.contactList = [];
-      this.getContactList();
+      // this.getContactList();
     }
   }
 
@@ -219,36 +222,43 @@ export class TaskComponent {
    * Loads the full contact details for each assigned contact in the task
    * and emits the resolved contact list.
    */
-  async getContactList() {
-    this.contactList = [];
-    if (this.task?.assignedTo?.length) {
-      const uniqueContactIds = [...new Set(this.task.assignedTo)];
-      for (let contactId of uniqueContactIds) {
-        const contact = await this.contactService.getContactById(contactId);
-        if (contact) this.contactList.push(contact);
-      }
-      this.contacts.emit(this.contactList);
-    }
-  }
+  // async getContactList() {
+  //   this.contactList = [];
+  //   if (this.task?.assignedTo?.length) {
+  //     const uniqueContactIds = [...new Set(this.task.assignedTo)];
+  //     for (let contactId of uniqueContactIds) {
+  //       const contact = await this.contactService.getContactById(contactId);
+  //       if (contact) this.contactList.push(contact);
+  //     }
+  //     this.contacts.emit(this.contactList);
+  //   }
+  // }
+
+  // NEU
+  getAssignedContacts(): Contact[] {
+  if (!this.contacts || !this.task) return [];
+  const assignedTo = this.task.assignedTo ?? [];
+  return this.contacts.filter(c => c.id && assignedTo.includes(c.id));
+}
 
    /**
    * Returns a unique list of contacts (removes duplicates based on ID)
    */
-  getAllUniqueContacts(): Contact[] {
-    if (!this.contactList || this.contactList.length === 0) {
-      return [];
-    }
-    return this.contactList.filter((contact, index, self) =>
-      index === self.findIndex(c => c.id === contact.id)
-    );
-  }
+  // getAllUniqueContacts(): Contact[] {
+  //   if (!this.contactList || this.contactList.length === 0) {
+  //     return [];
+  //   }
+  //   return this.contactList.filter((contact, index, self) =>
+  //     index === self.findIndex(c => c.id === contact.id)
+  //   );
+  // }
 
   /**
    * Returns the first 4 contacts for display.
    */
-  getUniqueContacts(): Contact[] {
-    return this.getAllUniqueContacts().slice(0, 4);
-  }
+  // getUniqueContacts(): Contact[] {
+  //   return this.getAllUniqueContacts().slice(0, 4);
+  // }
 
   /**
    * Joins the names of remaining contacts into a comma-separated string.
@@ -256,9 +266,16 @@ export class TaskComponent {
    * @param remainingContacts Array of remaining Contact objects.
    * @returns A comma-separated string of contact names.
    */
+  // getRemainingContactNames(): string {
+  //   const all = this.getAllUniqueContacts();
+  //   const remaining = all.slice(4);
+  //   return remaining.map((c) => c.name).join(', ');
+  // }
+
   getRemainingContactNames(): string {
-    const all = this.getAllUniqueContacts();
-    const remaining = all.slice(4);
-    return remaining.map((c) => c.name).join(', ');
-  }
+  return this.getAssignedContacts()
+    .slice(4)
+    .map(c => c.name)
+    .join(', ');
+}
 }
