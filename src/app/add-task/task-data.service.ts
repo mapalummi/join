@@ -52,6 +52,10 @@ export class TaskDataService {
     id?: string
   ): Task {
     const uniqueContactIds = this.getUniqueAssignedContactIds(contactManager);
+    // Setze Datum immer auf Mitternacht (lokale Zeit)
+  let date = new Date(formData.dueDate);
+  date.setHours(0, 0, 0, 0);
+
     const task: any = {
       title: formData.title.trim(),
       description: formData.description?.trim() || '',
@@ -72,18 +76,42 @@ export class TaskDataService {
     formData.description = task.description || '';
   }
 
+  // private setDueDate(date: any, formData: FormData): void {
+  //   if (!date) return;
+  //   let dateValue: Date;
+  //   if (date.toDate) {
+  //     dateValue = date.toDate();
+  //   } else if (date instanceof Date) {
+  //     dateValue = date;
+  //   } else {
+  //     dateValue = new Date(date);
+  //   }
+  //   formData.dueDate = dateValue.toISOString().split('T')[0];
+  // }
+
+  // NEU
   private setDueDate(date: any, formData: FormData): void {
-    if (!date) return;
-    let dateValue: Date;
-    if (date.toDate) {
-      dateValue = date.toDate();
-    } else if (date instanceof Date) {
-      dateValue = date;
-    } else {
-      dateValue = new Date(date);
-    }
-    formData.dueDate = dateValue.toISOString().split('T')[0];
+  if (!date) {
+    formData.dueDate = '';
+    return;
   }
+  let jsDate: Date;
+  if (typeof date.toDate === 'function') {
+    jsDate = date.toDate();
+  } else if (date instanceof Date) {
+    jsDate = date;
+  } else {
+    jsDate = new Date(date);
+  }
+  // Lokales Datum für <input type="date">
+  const year = jsDate.getFullYear();
+  const month = String(jsDate.getMonth() + 1).padStart(2, '0');
+  const day = String(jsDate.getDate()).padStart(2, '0');
+  formData.dueDate = `${year}-${month}-${day}`;
+}
+
+
+
 
   private setAssignedContacts(assignedToIds: string[], contactManager: ContactManager, contacts: Contact[]): void {
     if (!assignedToIds || assignedToIds.length === 0) return;
