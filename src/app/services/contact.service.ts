@@ -9,6 +9,7 @@ import {
   deleteDoc,
   getDoc,
   getDocs,
+  collectionData,
 } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { AbstractControl, ValidationErrors } from '@angular/forms';
@@ -124,87 +125,136 @@ export class ContactService {
     return doc(this.getContactsRef(), docId);
   }
 
+  // getContacts(): Observable<Contact[]> {
+  //   if (this.authService.isGuestUser()) {
+      
+  //     this.initializeGuestContacts();
+  //     return this.guestContactsSubject.asObservable();
+  //   } else {
+      
+  //     return new Observable((observer) => {
+  //       const unsubscribe = onSnapshot(
+  //         this.getContactsRef(),
+  //         (snapshot) => {
+  //           const contacts: Contact[] = [];
+  //           snapshot.forEach((doc) => {
+  //             contacts.push({ id: doc.id, ...doc.data() } as Contact);
+  //           });
+  //           observer.next(contacts);
+  //         },
+  //         (error) => observer.error(error)
+  //       );
+  //       return () => unsubscribe();
+  //     });
+  //   }
+  // }
+
+  // NEU
   getContacts(): Observable<Contact[]> {
-    if (this.authService.isGuestUser()) {
-      
-      this.initializeGuestContacts();
-      return this.guestContactsSubject.asObservable();
-    } else {
-      
-      return new Observable((observer) => {
-        const unsubscribe = onSnapshot(
-          this.getContactsRef(),
-          (snapshot) => {
-            const contacts: Contact[] = [];
-            snapshot.forEach((doc) => {
-              contacts.push({ id: doc.id, ...doc.data() } as Contact);
-            });
-            observer.next(contacts);
-          },
-          (error) => observer.error(error)
-        );
-        return () => unsubscribe();
-      });
-    }
+  if (this.authService.isGuestUser()) {
+    this.initializeGuestContacts();
+    return this.guestContactsSubject.asObservable();
+  } else {
+    return collectionData(this.getContactsRef(), { idField: 'id' }) as Observable<Contact[]>;
   }
+}
 
 
   /**
    * Initialisiert Guest-Contacts einmalig
    */
-  private initializeGuestContacts(): void {
-    if (this.guestContactsInitialized) {
+  // private initializeGuestContacts(): void {
+  //   if (this.guestContactsInitialized) {
       
-      const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
-      if (savedContacts) {
+  //     const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
+  //     if (savedContacts) {
         
-        const contacts: Contact[] = JSON.parse(savedContacts);
-        this.guestContactsSubject.next(contacts);
-        return;
-      } else {
+  //       const contacts: Contact[] = JSON.parse(savedContacts);
+  //       this.guestContactsSubject.next(contacts);
+  //       return;
+  //     } else {
         
-        this.guestContactsInitialized = false;
-      }
-    }
+  //       this.guestContactsInitialized = false;
+  //     }
+  //   }
 
-    this.guestContactsInitialized = true;
+  //   this.guestContactsInitialized = true;
 
-    if (!localStorage.getItem(this.GUEST_CONTACTS_LOADED_KEY)) {
-      // FIX: Für ersten Guest-Login von Standard-Collection (dummy-contacts) laden
-      const standardContactsRef = collection(this.firestore, 'dummy-contacts');
+  //   if (!localStorage.getItem(this.GUEST_CONTACTS_LOADED_KEY)) {
+  //     const standardContactsRef = collection(this.firestore, 'dummy-contacts');
 
-      const unsubscribe = onSnapshot(
-        standardContactsRef,
-        (snapshot) => {
-          const contacts: Contact[] = [];
-          snapshot.forEach((doc) => {
-            contacts.push({ id: doc.id, ...doc.data() } as Contact);
-          });
+  //     const unsubscribe = onSnapshot(
+  //       standardContactsRef,
+  //       (snapshot) => {
+  //         const contacts: Contact[] = [];
+  //         snapshot.forEach((doc) => {
+  //           contacts.push({ id: doc.id, ...doc.data() } as Contact);
+  //         });
 
-          localStorage.setItem(
-            this.GUEST_CONTACTS_KEY,
-            JSON.stringify(contacts)
-          );
-          localStorage.setItem(this.GUEST_CONTACTS_LOADED_KEY, 'true');
-          this.guestContactsSubject.next(contacts);
+  //         localStorage.setItem(
+  //           this.GUEST_CONTACTS_KEY,
+  //           JSON.stringify(contacts)
+  //         );
+  //         localStorage.setItem(this.GUEST_CONTACTS_LOADED_KEY, 'true');
+  //         this.guestContactsSubject.next(contacts);
 
-          unsubscribe();
-        },
-        (error) => {
-          console.error('Error loading guest contacts:', error);
-          // Fallback: Leeres Array bei Fehler
-          this.guestContactsSubject.next([]);
-          localStorage.setItem(this.GUEST_CONTACTS_LOADED_KEY, 'true');
-        }
-      );
-    } else {
-      const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
-      const contacts: Contact[] = savedContacts
-        ? JSON.parse(savedContacts)
-        : [];
+  //         unsubscribe();
+  //       },
+  //       (error) => {
+  //         console.error('Error loading guest contacts:', error);
+      
+  //         this.guestContactsSubject.next([]);
+  //         localStorage.setItem(this.GUEST_CONTACTS_LOADED_KEY, 'true');
+  //       }
+  //     );
+  //   } else {
+  //     const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
+  //     const contacts: Contact[] = savedContacts
+  //       ? JSON.parse(savedContacts)
+  //       : [];
+  //     this.guestContactsSubject.next(contacts);
+  //   }
+  // }
+
+  // NEU
+  private async initializeGuestContacts(): Promise<void> {
+  if (this.guestContactsInitialized) {
+    const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
+    if (savedContacts) {
+      const contacts: Contact[] = JSON.parse(savedContacts);
       this.guestContactsSubject.next(contacts);
+      return;
+    } else {
+      this.guestContactsInitialized = false;
     }
   }
+
+  this.guestContactsInitialized = true;
+
+  if (!localStorage.getItem(this.GUEST_CONTACTS_LOADED_KEY)) {
+    // Einmalig Dummy-Kontakte laden
+    const standardContactsRef = collection(this.firestore, 'dummy-contacts');
+    try {
+      const snapshot = await getDocs(standardContactsRef);
+      const contacts: Contact[] = [];
+      snapshot.forEach((doc) => {
+        contacts.push({ id: doc.id, ...doc.data() } as Contact);
+      });
+
+      localStorage.setItem(this.GUEST_CONTACTS_KEY, JSON.stringify(contacts));
+      localStorage.setItem(this.GUEST_CONTACTS_LOADED_KEY, 'true');
+      this.guestContactsSubject.next(contacts);
+    } catch (error) {
+      console.error('Error loading guest contacts:', error);
+      this.guestContactsSubject.next([]);
+      localStorage.setItem(this.GUEST_CONTACTS_LOADED_KEY, 'true');
+    }
+  } else {
+    const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
+    const contacts: Contact[] = savedContacts ? JSON.parse(savedContacts) : [];
+    this.guestContactsSubject.next(contacts);
+  }
+}
 
   /**
    * Adds a new contact to Firestore.

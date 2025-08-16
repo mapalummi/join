@@ -18,6 +18,8 @@ import {
 } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { TaskService } from './task.service';
+import { ContactService } from './contact.service';
 
 /**
  * Interface for user data stored in Firestore.
@@ -59,18 +61,19 @@ export class AuthService {
    * @param router - Angular Router for navigation
    */
   constructor(
-    private auth: Auth,
-    private firestore: Firestore,
-    private router: Router,
-    private injector: Injector
-  ) {
-    onAuthStateChanged(this.auth, (user) => {
-      this.currentUserSubject.next(user);
-      if (!this.authInitialized.value) {
-        this.authInitialized.next(true);
-      }
-    });
-  }
+  private auth: Auth,
+  private firestore: Firestore,
+  private router: Router,
+  // private taskService: TaskService,
+  // private contactService: ContactService
+) {
+  onAuthStateChanged(this.auth, (user) => {
+    this.currentUserSubject.next(user);
+    if (!this.authInitialized.value) {
+      this.authInitialized.next(true);
+    }
+  });
+}
 
   /**
    * Registers a new user with email, password, and display name.
@@ -163,17 +166,28 @@ export class AuthService {
   /**
    * Signs out the currently authenticated user and redirects to the login page.
    */
+  // async signOutUser(): Promise<void> {
+  //   // Guest-Daten optional löschen beim Logout
+  //   if (this.isGuestUser()) {
+  //     // Local Storage für Guest-User löschen
+  //     this.clearAllGuestData();
+  //     // Oder behalten für nächste Session
+  //     await this.resetGuestServices();
+  //   }
+  //   await signOut(this.auth);
+  //   this.router.navigate(['/login']);
+  // }
+
+  // NEU
   async signOutUser(): Promise<void> {
-    // Guest-Daten optional löschen beim Logout
-    if (this.isGuestUser()) {
-      // Local Storage für Guest-User löschen
-      this.clearAllGuestData();
-      // Oder behalten für nächste Session
-      await this.resetGuestServices();
-    }
-    await signOut(this.auth);
-    this.router.navigate(['/login']);
+  // Guest-Daten optional löschen beim Logout
+  if (this.isGuestUser()) {
+    this.clearAllGuestData();
+    // KEIN resetGuestServices() mehr hier!
   }
+  await signOut(this.auth);
+  this.router.navigate(['/login']);
+}
 
   /**
    * Clears all guest data from local storage.
@@ -188,20 +202,22 @@ export class AuthService {
   /**
    * Resets guest services to initial state.
    */
-  private async resetGuestServices(): Promise<void> {
-    try {
-      const { TaskService } = await import('./task.service');
-      const { ContactService } = await import('./contact.service');
+  // private async resetGuestServices(): Promise<void> {
+  //   try {
+  //     const { TaskService } = await import('./task.service');
+  //     const { ContactService } = await import('./contact.service');
 
-      const taskService = this.injector.get(TaskService);
-      const contactService = this.injector.get(ContactService);
+  //     const taskService = this.injector.get(TaskService);
+  //     const contactService = this.injector.get(ContactService);
 
-      taskService.resetGuestState();
-      contactService.resetGuestState();
-    } catch (error) {
-      console.warn('Error resetting guest services:', error);
-    }
-  }
+  //     taskService.resetGuestState();
+  //     contactService.resetGuestState();
+  //   } catch (error) {
+  //     console.warn('Error resetting guest services:', error);
+  //   }
+  // }
+
+  
 
   /**
    * Retrieves the current user's data from Firestore.

@@ -20,6 +20,9 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
+import { TaskService } from '../services/task.service';
+import { ContactService } from '../services/contact.service';
+
 @Component({
   selector: 'app-header',
   standalone: true,
@@ -64,7 +67,11 @@ export class HeaderComponent {
    * Initializes the header component and injects the authentication service.
    * @param authService Service responsible for user authentication.
    */
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private taskService: TaskService,
+    private contactService: ContactService
+  ) {}
 
   /**
    * Updates the `isMobile` flag and closes the menu on window resize
@@ -113,11 +120,20 @@ export class HeaderComponent {
    * Logs the user out by calling the authentication service,
    * clears session storage, and closes the menu.
    */
+  // async logout(): Promise<void> {
+  //   await this.authService.signOutUser();
+  //   sessionStorage.removeItem('greetingShown');
+  //   this.menuOpen = false;
+  // }
+
+  // NEU
   async logout(): Promise<void> {
-    await this.authService.signOutUser();
-    sessionStorage.removeItem('greetingShown');
-    this.menuOpen = false;
-  }
+  this.taskService.resetGuestState();
+  this.contactService.resetGuestState();
+  await this.authService.signOutUser();
+  sessionStorage.removeItem('greetingShown');
+  this.menuOpen = false;
+}
 
   /**
    * Returns the initials of the current user (e.g. "JD" for "John Doe").

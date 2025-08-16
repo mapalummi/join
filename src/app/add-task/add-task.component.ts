@@ -149,24 +149,89 @@ export class AddTaskComponent implements OnInit, OnDestroy {
   /**
    * Loads a task currently being edited from the TaskService and populates the form.
    */
+  // async loadEditingTask(): Promise<void> {
+  //   const editingTask = this.taskService.getEditingTask();
+  //   if (editingTask) {
+  //     this.isEditingMode = true;
+  //     this.editingTaskId = editingTask.id;
+  //     this.originalTaskStatus = (await this.taskDataService.populateFromTask(
+  //       editingTask,
+  //       this.formData,
+  //       this.priorityManager,
+  //       this.contactManager,
+  //       this.subtaskManager,
+  //       this.contacts
+  //     )) as 'to-do' | 'in-progress' | 'await-feedback' | 'done';
+  //     this.taskService.clearEditingTask();
+  //   } else {
+  //     this.clearAllManagers();
+  //   }
+  // }
+
+  // NEU:
   async loadEditingTask(): Promise<void> {
-    const editingTask = this.taskService.getEditingTask();
-    if (editingTask) {
-      this.isEditingMode = true;
-      this.editingTaskId = editingTask.id;
-      this.originalTaskStatus = (await this.taskDataService.populateFromTask(
-        editingTask,
-        this.formData,
-        this.priorityManager,
-        this.contactManager,
-        this.subtaskManager,
-        this.contacts
-      )) as 'to-do' | 'in-progress' | 'await-feedback' | 'done';
-      this.taskService.clearEditingTask();
-    } else {
-      this.clearAllManagers();
-    }
+  const editingTask = this.taskService.getEditingTask();
+  if (editingTask && editingTask.id) {
+    await this.loadTaskById(editingTask.id);
+  } else {
+    this.clearAllManagers();
   }
+}
+
+// NEU
+private async loadTaskById(taskId: string): Promise<void> {
+  try {
+    const freshTask = await this.taskService.getTaskById(taskId);
+    if (!freshTask) return;
+
+    this.isEditingMode = true;
+    this.editingTaskId = taskId;
+    await this.taskDataService.populateFromTask(
+      freshTask,
+      this.formData,
+      this.priorityManager,
+      this.contactManager,
+      this.subtaskManager,
+      this.contacts
+    );
+    this.taskService.clearEditingTask();
+  } catch (error) {
+    console.error('Error loading task for editing:', error);
+    this.clearAllManagers();
+  }
+}
+
+// MICHELLES CODE:
+/**
+ * Loads task data fresh from the database by ID
+ */
+// private async loadTaskById(taskId: string): Promise<void> {
+//   try {
+//     // Get fresh task data from database
+//     const freshTask = await this.taskService.getTaskById(taskId);
+//     if (!freshTask) return;
+
+//     this.isEditingMode = true;
+//     this.editingTaskId = taskId;
+//     this.editingTask = freshTask;
+
+//     // Load all related data fresh from database
+//     await Promise.all([
+//       this.loadFreshTaskData(freshTask),
+//       this.loadFreshSubtasks(taskId),
+//       this.loadFreshImages(freshTask.imageKey || [])
+//     ]);
+//   } catch (error) {
+//     console.error('Error loading task for editing:', error);
+//     this.clearAllManagers();
+//   }
+// }
+
+
+// 
+// 
+// 
+// 
 
   /**
    * Handles clicks outside of dropdowns to close them.

@@ -199,6 +199,6 @@ export class TaskDetailsComponent {
     if (this.subtaskSubscription) {
       this.subtaskSubscription.unsubscribe();
     }
-    console.log('TaskDetailsComponent destroyed');
+    // console.log('TaskDetailsComponent destroyed');
   }
 }

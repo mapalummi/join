@@ -5,9 +5,12 @@ import {
   onSnapshot,
   addDoc,
   doc,
+  getDoc,
   updateDoc,
   deleteDoc,
   Timestamp,
+  collectionData, // <-- AngularFire Observable API
+  docData,
 } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { AuthService } from './auth.service';
@@ -108,35 +111,89 @@ export class TaskService {
   /**
    * Observes all tasks in Firestore and emits updates in real-time.
    */
+  // getTasks(): Observable<Task[]> {
+  //   if (this.authService.isGuestUser()) {
+  //     this.initializeGuestTasks();
+  //     return this.guestTasksSubject.asObservable();
+  //   } else {
+  //     return new Observable((observer) => {
+  //       const unsubscribe = onSnapshot(
+  //         this.getTasksRef(),
+  //         (snapshot) => {
+  //           const tasks: Task[] = [];
+  //           snapshot.forEach((doc) => {
+  //             tasks.push({ id: doc.id, ...doc.data() } as Task);
+  //           });
+  //           observer.next(tasks);
+  //         },
+  //         (error) => {
+  //           console.error(
+  //             'Firestore error in getTasks:',
+  //             error,
+  //             'User:',
+  //             this.authService.currentUser$
+  //           );
+  //           observer.error(error);
+  //         }
+  //       );
+  //       return () => unsubscribe();
+  //     });
+  //   }
+  // }
+
+  // NEU
+  /**
+ * Observes all tasks in Firestore and emits updates in real-time.
+ */
+// getTasks(): Observable<Task[]> {
+//   return new Observable((observer) => {
+//     const unsubscribe = onSnapshot(this.getTasksRef(), snapshot => {
+//       const tasks: Task[] = [];
+//       snapshot.forEach(doc => {
+//         tasks.push({ id: doc.id, ...doc.data() } as Task);
+//       });
+//       observer.next(tasks);
+//     }, error => observer.error(error));
+//     return () => unsubscribe();
+//   });
+// }
+
+// NEUER
+/**
+   * Observes all tasks in Firestore and emits updates in real-time.
+   */
   getTasks(): Observable<Task[]> {
     if (this.authService.isGuestUser()) {
       this.initializeGuestTasks();
       return this.guestTasksSubject.asObservable();
     } else {
-      return new Observable((observer) => {
-        const unsubscribe = onSnapshot(
-          this.getTasksRef(),
-          (snapshot) => {
-            const tasks: Task[] = [];
-            snapshot.forEach((doc) => {
-              tasks.push({ id: doc.id, ...doc.data() } as Task);
-            });
-            observer.next(tasks);
-          },
-          (error) => {
-            console.error(
-              'Firestore error in getTasks:',
-              error,
-              'User:',
-              this.authService.currentUser$
-            );
-            observer.error(error);
-          }
-        );
-        return () => unsubscribe();
-      });
+      return collectionData(this.getTasksRef(), { idField: 'id' }) as Observable<Task[]>;
     }
   }
+
+// NEU
+/**
+ * Gets a single task by ID from Firestore.
+ *
+ * @param taskId - The ID of the task to retrieve.
+ * @returns Promise resolving to the task or null if not found.
+ */
+async getTaskById(taskId: string): Promise<Task | null> {
+  try {
+    const docRef = this.getSingleTaskRef(taskId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() } as Task;
+    } else {
+      console.warn(`Task with ID ${taskId} not found`);
+      return null;
+    }
+  } catch (error) {
+    console.error('Error getting task by ID:', error);
+    return null;
+  }
+}
 
   /**
    * Initializes guest tasks by loading them from local storage or, if not present,
@@ -209,46 +266,69 @@ export class TaskService {
    *
    * @param taskId - The ID of the parent task.
    */
+  // getSubtasks(taskId: string): Observable<Subtask[]> {
+  //   if (this.authService.isGuestUser()) {
+  //     return new Observable((observer) => {
+  //       const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
+  //       let tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
+
+  //       tasks = tasks.map((task) => ({
+  //         ...task,
+  //         date: this.ensureValidDate(task.date),
+  //       }));
+
+  //       const task = tasks.find((t) => t.id === taskId);
+  //       const subtasks = task?.subtask || [];
+  //       observer.next(subtasks);
+
+  //       return () => {};
+  //     });
+  //   } else {
+  //     return new Observable((observer) => {
+  //       const unsubscribe = onSnapshot(
+  //         this.getSubtasksRef(taskId),
+  //         (snapshot) => {
+  //           const subtasks: Subtask[] = [];
+  //           snapshot.forEach((doc) => {
+  //             subtasks.push({ id: doc.id, ...doc.data() } as Subtask);
+  //           });
+  //           observer.next(subtasks);
+  //         },
+  //         (error) => {
+  //           console.error(
+  //             'Firestore error in getTasks:',
+  //             error,
+  //             'User:',
+  //             this.authService.currentUser$
+  //           );
+  //           observer.error(error);
+  //         }
+  //       );
+  //       return () => unsubscribe();
+  //     });
+  //   }
+  // }
+
+  // NEU
+  /**
+   * Observes the subtasks of a given task in real-time.
+   */
   getSubtasks(taskId: string): Observable<Subtask[]> {
     if (this.authService.isGuestUser()) {
       return new Observable((observer) => {
         const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
         let tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
-
         tasks = tasks.map((task) => ({
           ...task,
           date: this.ensureValidDate(task.date),
         }));
-
         const task = tasks.find((t) => t.id === taskId);
         const subtasks = task?.subtask || [];
         observer.next(subtasks);
-
         return () => {};
       });
     } else {
-      return new Observable((observer) => {
-        const unsubscribe = onSnapshot(
-          this.getSubtasksRef(taskId),
-          (snapshot) => {
-            const subtasks: Subtask[] = [];
-            snapshot.forEach((doc) => {
-              subtasks.push({ id: doc.id, ...doc.data() } as Subtask);
-            });
-            observer.next(subtasks);
-          },
-          (error) => {
-            console.error(
-              'Firestore error in getTasks:',
-              error,
-              'User:',
-              this.authService.currentUser$
-            );
-            observer.error(error);
-          }
-        );
-        return () => unsubscribe();
-      });
+      return collectionData(this.getSubtasksRef(taskId), { idField: 'id' }) as Observable<Subtask[]>;
     }
   }
 
