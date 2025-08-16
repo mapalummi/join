@@ -160,61 +160,7 @@ export class ContactService {
 }
 
 
-  /**
-   * Initialisiert Guest-Contacts einmalig
-   */
-  // private initializeGuestContacts(): void {
-  //   if (this.guestContactsInitialized) {
-      
-  //     const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
-  //     if (savedContacts) {
-        
-  //       const contacts: Contact[] = JSON.parse(savedContacts);
-  //       this.guestContactsSubject.next(contacts);
-  //       return;
-  //     } else {
-        
-  //       this.guestContactsInitialized = false;
-  //     }
-  //   }
-
-  //   this.guestContactsInitialized = true;
-
-  //   if (!localStorage.getItem(this.GUEST_CONTACTS_LOADED_KEY)) {
-  //     const standardContactsRef = collection(this.firestore, 'dummy-contacts');
-
-  //     const unsubscribe = onSnapshot(
-  //       standardContactsRef,
-  //       (snapshot) => {
-  //         const contacts: Contact[] = [];
-  //         snapshot.forEach((doc) => {
-  //           contacts.push({ id: doc.id, ...doc.data() } as Contact);
-  //         });
-
-  //         localStorage.setItem(
-  //           this.GUEST_CONTACTS_KEY,
-  //           JSON.stringify(contacts)
-  //         );
-  //         localStorage.setItem(this.GUEST_CONTACTS_LOADED_KEY, 'true');
-  //         this.guestContactsSubject.next(contacts);
-
-  //         unsubscribe();
-  //       },
-  //       (error) => {
-  //         console.error('Error loading guest contacts:', error);
-      
-  //         this.guestContactsSubject.next([]);
-  //         localStorage.setItem(this.GUEST_CONTACTS_LOADED_KEY, 'true');
-  //       }
-  //     );
-  //   } else {
-  //     const savedContacts = localStorage.getItem(this.GUEST_CONTACTS_KEY);
-  //     const contacts: Contact[] = savedContacts
-  //       ? JSON.parse(savedContacts)
-  //       : [];
-  //     this.guestContactsSubject.next(contacts);
-  //   }
-  // }
+ 
 
   // NEU
   private async initializeGuestContacts(): Promise<void> {
@@ -232,7 +178,6 @@ export class ContactService {
   this.guestContactsInitialized = true;
 
   if (!localStorage.getItem(this.GUEST_CONTACTS_LOADED_KEY)) {
-    // Einmalig Dummy-Kontakte laden
     const standardContactsRef = collection(this.firestore, 'dummy-contacts');
     try {
       const snapshot = await getDocs(standardContactsRef);

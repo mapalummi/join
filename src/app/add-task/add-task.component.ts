@@ -107,7 +107,6 @@ export class AddTaskComponent implements OnInit, OnDestroy {
    */
   ngOnDestroy() {
     this.clearForm();
-    // Alle Subscriptions beenden!
     this.subscriptions.forEach((sub) => sub.unsubscribe());
     // console.log('TaskComponent destroyed');
   }
@@ -201,37 +200,6 @@ private async loadTaskById(taskId: string): Promise<void> {
   }
 }
 
-// MICHELLES CODE:
-/**
- * Loads task data fresh from the database by ID
- */
-// private async loadTaskById(taskId: string): Promise<void> {
-//   try {
-//     // Get fresh task data from database
-//     const freshTask = await this.taskService.getTaskById(taskId);
-//     if (!freshTask) return;
-
-//     this.isEditingMode = true;
-//     this.editingTaskId = taskId;
-//     this.editingTask = freshTask;
-
-//     // Load all related data fresh from database
-//     await Promise.all([
-//       this.loadFreshTaskData(freshTask),
-//       this.loadFreshSubtasks(taskId),
-//       this.loadFreshImages(freshTask.imageKey || [])
-//     ]);
-//   } catch (error) {
-//     console.error('Error loading task for editing:', error);
-//     this.clearAllManagers();
-//   }
-// }
-
-
-// 
-// 
-// 
-// 
 
   /**
    * Handles clicks outside of dropdowns to close them.
