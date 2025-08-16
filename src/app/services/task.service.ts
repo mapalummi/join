@@ -108,55 +108,10 @@ export class TaskService {
     return doc(collection(this.firestore, collectionName), docId);
   }
 
-  /**
-   * Observes all tasks in Firestore and emits updates in real-time.
-   */
-  // getTasks(): Observable<Task[]> {
-  //   if (this.authService.isGuestUser()) {
-  //     this.initializeGuestTasks();
-  //     return this.guestTasksSubject.asObservable();
-  //   } else {
-  //     return new Observable((observer) => {
-  //       const unsubscribe = onSnapshot(
-  //         this.getTasksRef(),
-  //         (snapshot) => {
-  //           const tasks: Task[] = [];
-  //           snapshot.forEach((doc) => {
-  //             tasks.push({ id: doc.id, ...doc.data() } as Task);
-  //           });
-  //           observer.next(tasks);
-  //         },
-  //         (error) => {
-  //           console.error(
-  //             'Firestore error in getTasks:',
-  //             error,
-  //             'User:',
-  //             this.authService.currentUser$
-  //           );
-  //           observer.error(error);
-  //         }
-  //       );
-  //       return () => unsubscribe();
-  //     });
-  //   }
-  // }
 
-  // NEU
-  /**
- * Observes all tasks in Firestore and emits updates in real-time.
- */
-// getTasks(): Observable<Task[]> {
-//   return new Observable((observer) => {
-//     const unsubscribe = onSnapshot(this.getTasksRef(), snapshot => {
-//       const tasks: Task[] = [];
-//       snapshot.forEach(doc => {
-//         tasks.push({ id: doc.id, ...doc.data() } as Task);
-//       });
-//       observer.next(tasks);
-//     }, error => observer.error(error));
-//     return () => unsubscribe();
-//   });
-// }
+ 
+
+
 
 // NEUER
 /**
@@ -266,53 +221,7 @@ async getTaskById(taskId: string): Promise<Task | null> {
    *
    * @param taskId - The ID of the parent task.
    */
-  // getSubtasks(taskId: string): Observable<Subtask[]> {
-  //   if (this.authService.isGuestUser()) {
-  //     return new Observable((observer) => {
-  //       const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
-  //       let tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
-
-  //       tasks = tasks.map((task) => ({
-  //         ...task,
-  //         date: this.ensureValidDate(task.date),
-  //       }));
-
-  //       const task = tasks.find((t) => t.id === taskId);
-  //       const subtasks = task?.subtask || [];
-  //       observer.next(subtasks);
-
-  //       return () => {};
-  //     });
-  //   } else {
-  //     return new Observable((observer) => {
-  //       const unsubscribe = onSnapshot(
-  //         this.getSubtasksRef(taskId),
-  //         (snapshot) => {
-  //           const subtasks: Subtask[] = [];
-  //           snapshot.forEach((doc) => {
-  //             subtasks.push({ id: doc.id, ...doc.data() } as Subtask);
-  //           });
-  //           observer.next(subtasks);
-  //         },
-  //         (error) => {
-  //           console.error(
-  //             'Firestore error in getTasks:',
-  //             error,
-  //             'User:',
-  //             this.authService.currentUser$
-  //           );
-  //           observer.error(error);
-  //         }
-  //       );
-  //       return () => unsubscribe();
-  //     });
-  //   }
-  // }
-
   // NEU
-  /**
-   * Observes the subtasks of a given task in real-time.
-   */
   getSubtasks(taskId: string): Observable<Subtask[]> {
     if (this.authService.isGuestUser()) {
       return new Observable((observer) => {

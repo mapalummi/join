@@ -13,11 +13,9 @@ export interface FormData {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
-
 export class TaskDataService {
-
   /**
    * Populates form and managers with data from an existing task.
    * Returns the original task status.
@@ -53,8 +51,8 @@ export class TaskDataService {
   ): Task {
     const uniqueContactIds = this.getUniqueAssignedContactIds(contactManager);
     // Setze Datum immer auf Mitternacht (lokale Zeit)
-  let date = new Date(formData.dueDate);
-  date.setHours(0, 0, 0, 0);
+    let date = new Date(formData.dueDate);
+    date.setHours(0, 0, 0, 0);
 
     const task: any = {
       title: formData.title.trim(),
@@ -63,7 +61,9 @@ export class TaskDataService {
       priority: priorityManager.selectedPriority as 'low' | 'medium' | 'urgent',
       status,
       assignedTo: uniqueContactIds,
-      category: categoryManager.getSelectedCategory() as 'technical' | 'user story'
+      category: categoryManager.getSelectedCategory() as
+        | 'technical'
+        | 'user story',
     };
     if (id) {
       task.id = id;
@@ -76,53 +76,45 @@ export class TaskDataService {
     formData.description = task.description || '';
   }
 
-  // private setDueDate(date: any, formData: FormData): void {
-  //   if (!date) return;
-  //   let dateValue: Date;
-  //   if (date.toDate) {
-  //     dateValue = date.toDate();
-  //   } else if (date instanceof Date) {
-  //     dateValue = date;
-  //   } else {
-  //     dateValue = new Date(date);
-  //   }
-  //   formData.dueDate = dateValue.toISOString().split('T')[0];
-  // }
-
   // NEU
   private setDueDate(date: any, formData: FormData): void {
-  if (!date) {
-    formData.dueDate = '';
-    return;
+    if (!date) {
+      formData.dueDate = '';
+      return;
+    }
+    let jsDate: Date;
+    if (typeof date.toDate === 'function') {
+      jsDate = date.toDate();
+    } else if (date instanceof Date) {
+      jsDate = date;
+    } else {
+      jsDate = new Date(date);
+    }
+    // Lokales Datum für <input type="date">
+    const year = jsDate.getFullYear();
+    const month = String(jsDate.getMonth() + 1).padStart(2, '0');
+    const day = String(jsDate.getDate()).padStart(2, '0');
+    formData.dueDate = `${year}-${month}-${day}`;
   }
-  let jsDate: Date;
-  if (typeof date.toDate === 'function') {
-    jsDate = date.toDate();
-  } else if (date instanceof Date) {
-    jsDate = date;
-  } else {
-    jsDate = new Date(date);
-  }
-  // Lokales Datum für <input type="date">
-  const year = jsDate.getFullYear();
-  const month = String(jsDate.getMonth() + 1).padStart(2, '0');
-  const day = String(jsDate.getDate()).padStart(2, '0');
-  formData.dueDate = `${year}-${month}-${day}`;
-}
 
-
-
-
-  private setAssignedContacts(assignedToIds: string[], contactManager: ContactManager, contacts: Contact[]): void {
+  private setAssignedContacts(
+    assignedToIds: string[],
+    contactManager: ContactManager,
+    contacts: Contact[]
+  ): void {
     if (!assignedToIds || assignedToIds.length === 0) return;
     const selectedContacts = contacts
-      .filter(contact => contact.id !== undefined)
-      .filter(contact => assignedToIds.includes(contact.id as string));
+      .filter((contact) => contact.id !== undefined)
+      .filter((contact) => assignedToIds.includes(contact.id as string));
     contactManager.setSelectedContacts(selectedContacts);
   }
-  
-  private getUniqueAssignedContactIds(contactManager: ContactManager): string[] {
+
+  private getUniqueAssignedContactIds(
+    contactManager: ContactManager
+  ): string[] {
     const contacts = contactManager.getSelectedContacts();
-    return [...new Set(contacts.map(c => c.id).filter(id => id !== undefined))] as string[];
+    return [
+      ...new Set(contacts.map((c) => c.id).filter((id) => id !== undefined)),
+    ] as string[];
   }
 }

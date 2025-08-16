@@ -148,84 +148,40 @@ export class AddTaskComponent implements OnInit, OnDestroy {
   /**
    * Loads a task currently being edited from the TaskService and populates the form.
    */
-  // async loadEditingTask(): Promise<void> {
-  //   const editingTask = this.taskService.getEditingTask();
-  //   if (editingTask) {
-  //     this.isEditingMode = true;
-  //     this.editingTaskId = editingTask.id;
-  //     this.originalTaskStatus = (await this.taskDataService.populateFromTask(
-  //       editingTask,
-  //       this.formData,
-  //       this.priorityManager,
-  //       this.contactManager,
-  //       this.subtaskManager,
-  //       this.contacts
-  //     )) as 'to-do' | 'in-progress' | 'await-feedback' | 'done';
-  //     this.taskService.clearEditingTask();
-  //   } else {
-  //     this.clearAllManagers();
-  //   }
-  // }
-
   // NEU:
   async loadEditingTask(): Promise<void> {
-  const editingTask = this.taskService.getEditingTask();
-  if (editingTask && editingTask.id) {
-    await this.loadTaskById(editingTask.id);
-  } else {
-    this.clearAllManagers();
+    const editingTask = this.taskService.getEditingTask();
+    if (editingTask && editingTask.id) {
+      await this.loadTaskById(editingTask.id);
+    } else {
+      this.clearAllManagers();
+    }
   }
-}
 
+  // NEU
+  private async loadTaskById(taskId: string): Promise<void> {
+    try {
+      const freshTask = await this.taskService.getTaskById(taskId);
+      if (!freshTask) return;
 
-
-// NEU
-// private async loadTaskById(taskId: string): Promise<void> {
-//   try {
-//     const freshTask = await this.taskService.getTaskById(taskId);
-//     if (!freshTask) return;
-
-//     this.isEditingMode = true;
-//     this.editingTaskId = taskId;
-//     await this.taskDataService.populateFromTask(
-//       freshTask,
-//       this.formData,
-//       this.priorityManager,
-//       this.contactManager,
-//       this.subtaskManager,
-//       this.contacts
-//     );
-//     this.taskService.clearEditingTask();
-//   } catch (error) {
-//     console.error('Error loading task for editing:', error);
-//     this.clearAllManagers();
-//   }
-// }
-
-private async loadTaskById(taskId: string): Promise<void> {
-  try {
-    const freshTask = await this.taskService.getTaskById(taskId);
-    if (!freshTask) return;
-
-    this.isEditingMode = true;
-    this.editingTaskId = taskId;
-    this.originalTaskStatus = await this.taskDataService.populateFromTask(
-      freshTask,
-      this.formData,
-      this.priorityManager,
-      this.contactManager,
-      this.subtaskManager,
-      this.contacts
-    ) as 'to-do' | 'in-progress' | 'await-feedback' | 'done';
-    this.taskService.clearEditingTask();
-  } catch (error) {
-    console.error('Error loading task for editing:', error);
-    this.clearAllManagers();
+      this.isEditingMode = true;
+      this.editingTaskId = taskId;
+      this.originalTaskStatus = (await this.taskDataService.populateFromTask(
+        freshTask,
+        this.formData,
+        this.priorityManager,
+        this.contactManager,
+        this.subtaskManager,
+        this.contacts
+      )) as 'to-do' | 'in-progress' | 'await-feedback' | 'done';
+      this.taskService.clearEditingTask();
+    } catch (error) {
+      console.error('Error loading task for editing:', error);
+      this.clearAllManagers();
+    }
   }
-}
 
-
-/**
+  /**
    * Updates an existing task and its subtasks.
    */
   async updateTask(): Promise<void> {
@@ -389,27 +345,6 @@ private async loadTaskById(taskId: string): Promise<void> {
       );
     }
   }
-
-  // /**
-  //  * Updates an existing task and its subtasks.
-  //  */
-  // async updateTask(): Promise<void> {
-  //   if (!this.editingTaskId) return;
-  //   const updatedTask: Task = this.taskDataService.buildTask(
-  //     this.formData,
-  //     this.originalTaskStatus,
-  //     this.priorityManager,
-  //     this.contactManager,
-  //     this.categoryManager,
-  //     this.editingTaskId
-  //   );
-  //   await this.taskService.updateTask(this.editingTaskId, updatedTask);
-  //   const currentSubtasks = this.subtaskManager.getSubtasks();
-  //   const deleted = this.subtaskManager.getDeletedSubtasks(currentSubtasks);
-  //   await this.subtaskManager.deleteSubtasks(this.editingTaskId, deleted);
-  //   await this.subtaskManager.syncSubtasks(this.editingTaskId, currentSubtasks);
-  //   this.taskService.clearEditingTask();
-  // }
 
   /**
    * Handles title input changes and clears error state.
