@@ -2,7 +2,7 @@
  * TaskComponent represents an individual task item within a task board.
  * It handles interactions such as opening task details, managing subtasks,
  * showing contact assignments, and changing the task status.
- * 
+ *
  * Features:
  * - Displays task and assigned contacts
  * - Emits selected task for detail view
@@ -10,7 +10,7 @@
  * - Toggles a contextual dots menu for task actions
  * - Emits changes to task status
  * - Loads associated contact details
- * 
+ *
  * Dependencies:
  * - TaskService for task-related operations
  * - ContactService for retrieving assigned contact information
@@ -36,9 +36,7 @@ import { SimpleChanges, OnChanges } from '@angular/core';
   templateUrl: './task.component.html',
   styleUrl: './task.component.scss',
 })
-
 export class TaskComponent {
-
   /**
    * The full list of contacts assigned to the task.
    */
@@ -97,7 +95,7 @@ export class TaskComponent {
 
   /**
    * Injects services required for task and contact operations.
-   * 
+   *
    * @param taskService Service for task data handling.
    * @param contactService Service for fetching contact information.
    */
@@ -108,7 +106,7 @@ export class TaskComponent {
 
   /**
    * Detects clicks outside the "dots" menu and closes it if open.
-   * 
+   *
    * @param event Mouse click event on the document.
    */
   @HostListener('document:click', ['$event'])
@@ -147,7 +145,7 @@ export class TaskComponent {
 
   /**
    * Emits a task status change and closes the dots menu.
-   * 
+   *
    * @param status The new status to assign to the task.
    * @param event Optional mouse event to stop propagation.
    */
@@ -163,7 +161,7 @@ export class TaskComponent {
 
   /**
    * Returns the number of completed subtasks.
-   * 
+   *
    * @param subtaskList The list of subtasks to evaluate.
    * @returns The number of completed subtasks.
    */
@@ -175,7 +173,7 @@ export class TaskComponent {
 
   /**
    * Calculates the percentage of completed subtasks.
-   * 
+   *
    * @param subtaskList The list of subtasks to evaluate.
    * @returns The completion percentage as a number between 0 and 100.
    */
@@ -187,7 +185,7 @@ export class TaskComponent {
 
   /**
    * Emits the selected task to open its detail view.
-   * 
+   *
    * @param task The task to open.
    */
   openTaskDetails(task: Task) {
@@ -197,7 +195,7 @@ export class TaskComponent {
 
   /**
    * Checks if the dots menu is currently open for this task.
-   * 
+   *
    * @returns A boolean indicating if the dots menu is open.
    */
   get isDotsMenuOpen() {
@@ -206,7 +204,7 @@ export class TaskComponent {
 
   /**
    * Toggles the dots menu open or closed for this task.
-   * 
+   *
    * @param event Mouse event to stop propagation.
    */
   openDotsMenuHandler(event: MouseEvent) {
@@ -236,12 +234,13 @@ export class TaskComponent {
 
   // NEU
   getAssignedContacts(): Contact[] {
-  if (!this.contacts || !this.task) return [];
-  const assignedTo = this.task.assignedTo ?? [];
-  return this.contacts.filter(c => c.id && assignedTo.includes(c.id));
-}
+    if (!this.contacts || !this.task) return [];
+    const assignedTo = this.task.assignedTo ?? [];
+    return this.contacts.filter((c) => c.id && assignedTo.includes(c.id));
+  }
 
-   /**
+  // NOTE:
+  /**
    * Returns a unique list of contacts (removes duplicates based on ID)
    */
   // getAllUniqueContacts(): Contact[] {
@@ -253,6 +252,7 @@ export class TaskComponent {
   //   );
   // }
 
+  // NOTE:
   /**
    * Returns the first 4 contacts for display.
    */
@@ -262,20 +262,14 @@ export class TaskComponent {
 
   /**
    * Joins the names of remaining contacts into a comma-separated string.
-   * 
+   *
    * @param remainingContacts Array of remaining Contact objects.
    * @returns A comma-separated string of contact names.
    */
-  // getRemainingContactNames(): string {
-  //   const all = this.getAllUniqueContacts();
-  //   const remaining = all.slice(4);
-  //   return remaining.map((c) => c.name).join(', ');
-  // }
-
   getRemainingContactNames(): string {
-  return this.getAssignedContacts()
-    .slice(4)
-    .map(c => c.name)
-    .join(', ');
-}
+    return this.getAssignedContacts()
+      .slice(4)
+      .map((c) => c.name)
+      .join(', ');
+  }
 }

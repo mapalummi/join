@@ -289,7 +289,7 @@
     <div class="content-wrapper" *ngIf="showAddOrEditTask">
       <app-add-task
         *ngIf="showAddOrEditTask"
-        (taskAdded)="closeDetailsOverlay($event)"
+        (taskAdded)="handleTaskEdited($event)"
         (closeOverlay)="closeDetailsOverlay('close')"
         [defaultStatus]="setTaskStatus"
         [isOverlayMode]="true"

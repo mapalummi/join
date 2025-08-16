@@ -172,7 +172,8 @@ export class BoardComponent implements OnInit, OnDestroy {
     private taskListManager: TaskListManager,
     private dragDropManager: DragDropManager,
     private overlayManager: OverlayManager,
-    private contactService: ContactService // <--- Kontaktservice injizieren
+    private contactService: ContactService,
+    private taskService: TaskService
   ) {}
 
   /**
@@ -219,7 +220,7 @@ export class BoardComponent implements OnInit, OnDestroy {
       this.overlayManager.setAnimationDirection(window.innerWidth);
     });
     // Kontakte direkt beim Initialisieren laden:
-    this.contactService.getContacts().subscribe(contacts => {
+    this.contactService.getContacts().subscribe((contacts) => {
       this.contactList = contacts;
     });
   }
@@ -404,6 +405,16 @@ export class BoardComponent implements OnInit, OnDestroy {
   onDragMoved(event: CdkDragMove) {
     this.dragDropManager.handleDragMove(event, this.scrollSection);
   }
+
+  async handleTaskEdited(taskId: string) {
+  // Task-Liste neu laden, damit überall die aktuellen Daten sind
+  await this.taskListManager.loadTasks();
+  // Task nach Editieren frisch aus Firestore laden
+  const updatedTask = await this.taskService.getTaskById(taskId);
+  if (updatedTask) {
+    this.overlayManager.openTaskDetail(updatedTask);
+  }
+}
 
   /**
    * Angular lifecycle hook that is called when the BoardComponent is destroyed.
