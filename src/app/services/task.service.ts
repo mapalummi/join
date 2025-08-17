@@ -2,16 +2,15 @@ import { Injectable } from '@angular/core';
 import {
   Firestore,
   collection,
-  onSnapshot,
   addDoc,
   doc,
   getDoc,
+  getDocs,
   updateDoc,
   deleteDoc,
   Timestamp,
-  collectionData, // <-- AngularFire Observable API
-  docData,
 } from '@angular/fire/firestore';
+import { collectionData, docData } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { AuthService } from './auth.service';
 
@@ -108,13 +107,8 @@ export class TaskService {
     return doc(collection(this.firestore, collectionName), docId);
   }
 
-
- 
-
-
-
-// NEUER
-/**
+  // NEUER
+  /**
    * Observes all tasks in Firestore and emits updates in real-time.
    */
   getTasks(): Observable<Task[]> {
@@ -122,39 +116,40 @@ export class TaskService {
       this.initializeGuestTasks();
       return this.guestTasksSubject.asObservable();
     } else {
-      return collectionData(this.getTasksRef(), { idField: 'id' }) as Observable<Task[]>;
+      return collectionData(this.getTasksRef(), {
+        idField: 'id',
+      }) as Observable<Task[]>;
     }
   }
 
-// NEU
-/**
- * Gets a single task by ID from Firestore.
- *
- * @param taskId - The ID of the task to retrieve.
- * @returns Promise resolving to the task or null if not found.
- */
-async getTaskById(taskId: string): Promise<Task | null> {
-  if (this.authService.isGuestUser()) {
-    const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
-    const tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
-    const task = tasks.find((t) => t.id === taskId);
-    return task ? { ...task, date: this.ensureValidDate(task.date) } : null;
-  }
-  try {
-    const docRef = this.getSingleTaskRef(taskId);
-    const docSnap = await getDoc(docRef);
+  /**
+   * Gets a single task by ID from Firestore.
+   *
+   * @param taskId - The ID of the task to retrieve.
+   * @returns Promise resolving to the task or null if not found.
+   */
+  async getTaskById(taskId: string): Promise<Task | null> {
+    if (this.authService.isGuestUser()) {
+      const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
+      const tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
+      const task = tasks.find((t) => t.id === taskId);
+      return task ? { ...task, date: this.ensureValidDate(task.date) } : null;
+    }
+    try {
+      const docRef = this.getSingleTaskRef(taskId);
+      const docSnap = await getDoc(docRef);
 
-    if (docSnap.exists()) {
-      return { id: docSnap.id, ...docSnap.data() } as Task;
-    } else {
-      console.warn(`Task with ID ${taskId} not found`);
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as Task;
+      } else {
+        console.warn(`Task with ID ${taskId} not found`);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error getting task by ID:', error);
       return null;
     }
-  } catch (error) {
-    console.error('Error getting task by ID:', error);
-    return null;
   }
-}
 
   /**
    * Initializes guest tasks by loading them from local storage or, if not present,
@@ -162,7 +157,81 @@ async getTaskById(taskId: string): Promise<Task | null> {
    * a default set of tasks and keeps the guestTasksSubject updated.
    * Called when a guest user accesses tasks for the first time in a session.
    */
-  private initializeGuestTasks(): void {
+  // private initializeGuestTasks(): void {
+  //   if (this.guestTasksInitialized) {
+  //     const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
+  //     if (savedTasks) {
+  //       let tasks: Task[] = JSON.parse(savedTasks);
+  //       tasks = tasks.map((task) => ({
+  //         ...task,
+  //         date: this.ensureValidDate(task.date),
+  //       }));
+  //       this.guestTasksSubject.next(tasks);
+  //       return;
+  //     } else {
+  //       this.guestTasksInitialized = false;
+  //     }
+  //   }
+
+  //   this.guestTasksInitialized = true;
+
+  //   if (!localStorage.getItem(this.GUEST_LOADED_KEY)) {
+  //     const standardTasksRef = collection(this.firestore, 'dummy-tasks');
+
+  //     const unsubscribe = onSnapshot(
+  //       standardTasksRef,
+  //       async (snapshot) => {
+  //         const tasks: Task[] = [];
+  //         for (const docSnap of snapshot.docs) {
+  //           const data = docSnap.data() as Task;
+  //           const task: Task = {
+  //             ...data,
+  //             id: docSnap.id,
+  //             date: this.ensureValidDate(data.date),
+  //           };
+  //           // Subtasks aus Subcollection laden:
+  //           const subtasksSnap = await getDocs(
+  //             collection(this.firestore, `dummy-tasks/${docSnap.id}/subtasks`)
+  //           );
+  //           task.subtask = subtasksSnap.docs.map((subDoc) => ({
+  //             ...(subDoc.data() as Subtask),
+  //             id: subDoc.id,
+  //           }));
+  //           tasks.push(task);
+  //         }
+  //         localStorage.setItem(this.GUEST_TASKS_KEY, JSON.stringify(tasks));
+  //         localStorage.setItem(this.GUEST_LOADED_KEY, 'true');
+  //         this.guestTasksSubject.next(tasks);
+  //         unsubscribe();
+  //       },
+
+  //       (error) => {
+  //         console.error('Error loading guest tasks:', error);
+  //         this.guestTasksSubject.next([]);
+  //         localStorage.setItem(this.GUEST_LOADED_KEY, 'true');
+  //       }
+  //     );
+  //   } else {
+  //     const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
+  //     let tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
+
+  //     tasks = tasks.map((task) => ({
+  //       ...task,
+  //       date: this.ensureValidDate(task.date),
+  //     }));
+
+  //     this.guestTasksSubject.next(tasks);
+  //   }
+  // }
+
+  // NEU:
+  /**
+   * Initializes guest tasks by loading them from local storage or, if not present,
+   * from the Firestore 'dummy-tasks' collection. Ensures that guest users have
+   * a default set of tasks and keeps the guestTasksSubject updated.
+   * Called when a guest user accesses tasks for the first time in a session.
+   */
+  private async initializeGuestTasks(): Promise<void> {
     if (this.guestTasksInitialized) {
       const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
       if (savedTasks) {
@@ -182,33 +251,33 @@ async getTaskById(taskId: string): Promise<Task | null> {
 
     if (!localStorage.getItem(this.GUEST_LOADED_KEY)) {
       const standardTasksRef = collection(this.firestore, 'dummy-tasks');
-
-      const unsubscribe = onSnapshot(
-        standardTasksRef,
-        (snapshot) => {
-          const tasks: Task[] = [];
-          snapshot.forEach((doc) => {
-            const data = doc.data() as Task;
-            const task: Task = {
-              ...data,
-              id: doc.id,
-              date: this.ensureValidDate(data.date),
-            };
-            tasks.push(task);
-          });
-
-          localStorage.setItem(this.GUEST_TASKS_KEY, JSON.stringify(tasks));
-          localStorage.setItem(this.GUEST_LOADED_KEY, 'true');
-          this.guestTasksSubject.next(tasks);
-
-          unsubscribe();
-        },
-        (error) => {
-          console.error('Error loading guest tasks:', error);
-          this.guestTasksSubject.next([]);
-          localStorage.setItem(this.GUEST_LOADED_KEY, 'true');
+      try {
+        const snapshot = await getDocs(standardTasksRef);
+        const tasks: Task[] = [];
+        for (const docSnap of snapshot.docs) {
+          const data = docSnap.data() as Task;
+          const task: Task = {
+            ...data,
+            id: docSnap.id,
+            date: this.ensureValidDate(data.date),
+          };
+          const subtasksSnap = await getDocs(
+            collection(this.firestore, `dummy-tasks/${docSnap.id}/subtasks`)
+          );
+          task.subtask = subtasksSnap.docs.map((subDoc) => ({
+            ...(subDoc.data() as Subtask),
+            id: subDoc.id,
+          }));
+          tasks.push(task);
         }
-      );
+        localStorage.setItem(this.GUEST_TASKS_KEY, JSON.stringify(tasks));
+        localStorage.setItem(this.GUEST_LOADED_KEY, 'true');
+        this.guestTasksSubject.next(tasks);
+      } catch (error) {
+        console.error('Error loading guest tasks:', error);
+        this.guestTasksSubject.next([]);
+        localStorage.setItem(this.GUEST_LOADED_KEY, 'true');
+      }
     } else {
       const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
       let tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
@@ -227,7 +296,6 @@ async getTaskById(taskId: string): Promise<Task | null> {
    *
    * @param taskId - The ID of the parent task.
    */
-  // NEU
   getSubtasks(taskId: string): Observable<Subtask[]> {
     if (this.authService.isGuestUser()) {
       return new Observable((observer) => {
@@ -243,7 +311,9 @@ async getTaskById(taskId: string): Promise<Task | null> {
         return () => {};
       });
     } else {
-      return collectionData(this.getSubtasksRef(taskId), { idField: 'id' }) as Observable<Subtask[]>;
+      return collectionData(this.getSubtasksRef(taskId), {
+        idField: 'id',
+      }) as Observable<Subtask[]>;
     }
   }
 
