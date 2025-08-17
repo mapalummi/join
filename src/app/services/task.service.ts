@@ -85,6 +85,7 @@ export class TaskService {
    */
   getTasksRef() {
     const collectionName = this.authService.getCollectionName('tasks');
+    // console.log('Tasks Collection:', collectionName); // DEBUG
     return collection(this.firestore, collectionName);
   }
 
@@ -107,7 +108,7 @@ export class TaskService {
     return doc(collection(this.firestore, collectionName), docId);
   }
 
-  // NEUER
+  // TODO:
   /**
    * Observes all tasks in Firestore and emits updates in real-time.
    */

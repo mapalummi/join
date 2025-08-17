@@ -163,26 +163,35 @@ export class TaskListManager {
    *
    * @param tasks - The full list of tasks to distribute.
    */
+  // private distributeTasksByStatus(tasks: Task[]): void {
+  //   this.emptyArrays();
+  //   for (const task of tasks) {
+  //     switch (task.status) {
+  //       case 'to-do':
+  //         this.todo.push(task);
+  //         break;
+  //       case 'in-progress':
+  //         this.inprogress.push(task);
+  //         break;
+  //       case 'await-feedback':
+  //         this.awaitfeedback.push(task);
+  //         break;
+  //       case 'done':
+  //         this.done.push(task);
+  //         break;
+  //       default:
+  //         console.warn(`Unknown status in task ${task.title}:`, task.status);
+  //     }
+  //   }
+  // }
+
+  // NOTE:
+  // NEUE METHODE:
   private distributeTasksByStatus(tasks: Task[]): void {
-    this.emptyArrays();
-    for (const task of tasks) {
-      switch (task.status) {
-        case 'to-do':
-          this.todo.push(task);
-          break;
-        case 'in-progress':
-          this.inprogress.push(task);
-          break;
-        case 'await-feedback':
-          this.awaitfeedback.push(task);
-          break;
-        case 'done':
-          this.done.push(task);
-          break;
-        default:
-          console.warn(`Unknown status in task ${task.title}:`, task.status);
-      }
-    }
+    this.todo = tasks.filter((t) => t.status === 'to-do');
+    this.inprogress = tasks.filter((t) => t.status === 'in-progress');
+    this.awaitfeedback = tasks.filter((t) => t.status === 'await-feedback');
+    this.done = tasks.filter((t) => t.status === 'done');
   }
 
   /**

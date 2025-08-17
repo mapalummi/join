@@ -1,4 +1,4 @@
-import { Injectable, Injector } from '@angular/core';
+import { Injectable } from '@angular/core';
 import {
   Auth,
   createUserWithEmailAndPassword,
@@ -14,12 +14,9 @@ import {
   doc,
   setDoc,
   getDoc,
-  DocumentData,
 } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { TaskService } from './task.service';
-import { ContactService } from './contact.service';
 
 /**
  * Interface for user data stored in Firestore.
@@ -41,6 +38,7 @@ export interface UserData {
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   private authInitialized = new BehaviorSubject<boolean>(false);
+  private isGuest = false;
 
   /**
    * Observable emitting the current authenticated Firebase user.
@@ -61,19 +59,18 @@ export class AuthService {
    * @param router - Angular Router for navigation
    */
   constructor(
-  private auth: Auth,
-  private firestore: Firestore,
-  private router: Router,
-  // private taskService: TaskService,
-  // private contactService: ContactService
-) {
-  onAuthStateChanged(this.auth, (user) => {
-    this.currentUserSubject.next(user);
-    if (!this.authInitialized.value) {
-      this.authInitialized.next(true);
-    }
-  });
-}
+    private auth: Auth,
+    private firestore: Firestore,
+    private router: Router,
+  ) {
+    onAuthStateChanged(this.auth, (user) => {
+      this.currentUserSubject.next(user);
+      this.isGuest = user?.email === 'guest@join.com'; // Guest-Status nur hier setzen!
+      if (!this.authInitialized.value) {
+        this.authInitialized.next(true);
+      }
+    });
+  }
 
   /**
    * Registers a new user with email, password, and display name.
@@ -166,24 +163,9 @@ export class AuthService {
   /**
    * Signs out the currently authenticated user and redirects to the login page.
    */
-  // async signOutUser(): Promise<void> {
-  //   // Guest-Daten optional löschen beim Logout
-  //   if (this.isGuestUser()) {
-  //     // Local Storage für Guest-User löschen
-  //     this.clearAllGuestData();
-  //     // Oder behalten für nächste Session
-  //     await this.resetGuestServices();
-  //   }
-  //   await signOut(this.auth);
-  //   this.router.navigate(['/login']);
-  // }
-
-  // NEU
   async signOutUser(): Promise<void> {
-  // Guest-Daten optional löschen beim Logout
   if (this.isGuestUser()) {
     this.clearAllGuestData();
-    // KEIN resetGuestServices() mehr hier!
   }
   await signOut(this.auth);
   this.router.navigate(['/login']);
@@ -296,8 +278,7 @@ export class AuthService {
    * @returns True if the current user is a guest, false otherwise
    */
   isGuestUser(): boolean {
-    const currentUser = this.auth.currentUser;
-    return currentUser?.email === 'guest@join.com';
+    return this.isGuest;
   }
 
   /**
