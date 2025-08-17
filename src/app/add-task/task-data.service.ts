@@ -50,7 +50,6 @@ export class TaskDataService {
     id?: string
   ): Task {
     const uniqueContactIds = this.getUniqueAssignedContactIds(contactManager);
-    // Setze Datum immer auf Mitternacht (lokale Zeit)
     let date = new Date(formData.dueDate);
     date.setHours(0, 0, 0, 0);
 
@@ -90,7 +89,7 @@ export class TaskDataService {
     } else {
       jsDate = new Date(date);
     }
-    // Lokales Datum für <input type="date">
+    
     const year = jsDate.getFullYear();
     const month = String(jsDate.getMonth() + 1).padStart(2, '0');
     const day = String(jsDate.getDate()).padStart(2, '0');

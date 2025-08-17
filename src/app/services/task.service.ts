@@ -134,6 +134,12 @@ export class TaskService {
  * @returns Promise resolving to the task or null if not found.
  */
 async getTaskById(taskId: string): Promise<Task | null> {
+  if (this.authService.isGuestUser()) {
+    const savedTasks = localStorage.getItem(this.GUEST_TASKS_KEY);
+    const tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
+    const task = tasks.find((t) => t.id === taskId);
+    return task ? { ...task, date: this.ensureValidDate(task.date) } : null;
+  }
   try {
     const docRef = this.getSingleTaskRef(taskId);
     const docSnap = await getDoc(docRef);
