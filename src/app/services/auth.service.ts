@@ -1,4 +1,4 @@
-import { Injectable, Injector } from '@angular/core';
+import { Injectable } from '@angular/core';
 import {
   Auth,
   createUserWithEmailAndPassword,
@@ -14,7 +14,6 @@ import {
   doc,
   setDoc,
   getDoc,
-  DocumentData,
 } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
@@ -39,6 +38,7 @@ export interface UserData {
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   private authInitialized = new BehaviorSubject<boolean>(false);
+  private isGuest = false;
 
   /**
    * Observable emitting the current authenticated Firebase user.
@@ -62,10 +62,10 @@ export class AuthService {
     private auth: Auth,
     private firestore: Firestore,
     private router: Router,
-    private injector: Injector
   ) {
     onAuthStateChanged(this.auth, (user) => {
       this.currentUserSubject.next(user);
+      this.isGuest = user?.email === 'guest@join.com'; // Guest-Status nur hier setzen!
       if (!this.authInitialized.value) {
         this.authInitialized.next(true);
       }
@@ -164,16 +164,12 @@ export class AuthService {
    * Signs out the currently authenticated user and redirects to the login page.
    */
   async signOutUser(): Promise<void> {
-    // Guest-Daten optional löschen beim Logout
-    if (this.isGuestUser()) {
-      // Local Storage für Guest-User löschen
-      this.clearAllGuestData();
-      // Oder behalten für nächste Session
-      await this.resetGuestServices();
-    }
-    await signOut(this.auth);
-    this.router.navigate(['/login']);
+  if (this.isGuestUser()) {
+    this.clearAllGuestData();
   }
+  await signOut(this.auth);
+  this.router.navigate(['/login']);
+}
 
   /**
    * Clears all guest data from local storage.
@@ -181,7 +177,6 @@ export class AuthService {
   private clearAllGuestData(): void {
     localStorage.removeItem('guest-tasks');
     localStorage.removeItem('guest-tasks-loaded');
-
     localStorage.removeItem('guest-contacts');
     localStorage.removeItem('guest-contacts-loaded');
   }
@@ -189,20 +184,22 @@ export class AuthService {
   /**
    * Resets guest services to initial state.
    */
-  private async resetGuestServices(): Promise<void> {
-    try {
-      const { TaskService } = await import('./task.service');
-      const { ContactService } = await import('./contact.service');
+  // private async resetGuestServices(): Promise<void> {
+  //   try {
+  //     const { TaskService } = await import('./task.service');
+  //     const { ContactService } = await import('./contact.service');
 
-      const taskService = this.injector.get(TaskService);
-      const contactService = this.injector.get(ContactService);
+  //     const taskService = this.injector.get(TaskService);
+  //     const contactService = this.injector.get(ContactService);
 
-      taskService.resetGuestState();
-      contactService.resetGuestState();
-    } catch (error) {
-      console.warn('Error resetting guest services:', error);
-    }
-  }
+  //     taskService.resetGuestState();
+  //     contactService.resetGuestState();
+  //   } catch (error) {
+  //     console.warn('Error resetting guest services:', error);
+  //   }
+  // }
+
+  
 
   /**
    * Retrieves the current user's data from Firestore.
@@ -281,8 +278,7 @@ export class AuthService {
    * @returns True if the current user is a guest, false otherwise
    */
   isGuestUser(): boolean {
-    const currentUser = this.auth.currentUser;
-    return currentUser?.email === 'guest@join.com';
+    return this.isGuest;
   }
 
   /**

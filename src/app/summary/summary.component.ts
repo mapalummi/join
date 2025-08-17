@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { TaskService, Task } from '../services/task.service';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -10,6 +10,7 @@ import {
   transition,
   animate,
 } from '@angular/animations';
+import { Subscription } from 'rxjs';
 
 interface FirestoreTimestamp {
   toDate(): Date;
@@ -28,7 +29,9 @@ interface FirestoreTimestamp {
     ]),
   ],
 })
-export class SummaryComponent implements OnInit {
+export class SummaryComponent implements OnInit, OnDestroy {
+  private taskSubscription?: Subscription;
+
   taskList: Task[] = [];
   userName: string = '';
   greetingState: 'start' | 'moved' = 'start';
@@ -133,43 +136,26 @@ export class SummaryComponent implements OnInit {
    * If on mobile and greeting hasn't been shown in this session,
    * triggers an animated greeting display.
    */
-  // private loadUserGreeting(): void {
-  //   this.authService.getCurrentUserData().then((userData) => {
-  //     this.userName = userData?.displayName?.trim()
-  //       ? userData.displayName
-  //       : 'Nice to see you!';
-  //     this.greeting = this.getGreeting();
-  //     const greetingShown = sessionStorage.getItem('greetingShown');
-  //     if (this.isMobile && !greetingShown) {
-  //       this.showAnimatedGreeting();
-  //     } else {
-  //       this.showGreeting = false;
-  //     }
-  //   });
-  // }
-
-  // TESTWEISE:
-  // Korrigierte loadUserGreeting-Methode
-private loadUserGreeting(): void {
-  if (this.authService.isGuestUser()) {
-    this.userName = 'Guest'; // Oder ein anderer passender Name
-    this.greeting = this.getGreeting();
-    this.showGreeting = false;
-  } else {
-    this.authService.getCurrentUserData().then((userData) => {
-      this.userName = userData?.displayName?.trim()
-        ? userData.displayName
-        : 'Nice to see you!';
+  private loadUserGreeting(): void {
+    if (this.authService.isGuestUser()) {
+      this.userName = 'Guest';
       this.greeting = this.getGreeting();
-      const greetingShown = sessionStorage.getItem('greetingShown');
-      if (this.isMobile && !greetingShown) {
-        this.showAnimatedGreeting();
-      } else {
-        this.showGreeting = false;
-      }
-    });
+      this.showGreeting = false;
+    } else {
+      this.authService.getCurrentUserData().then((userData) => {
+        this.userName = userData?.displayName?.trim()
+          ? userData.displayName
+          : 'Nice to see you!';
+        this.greeting = this.getGreeting();
+        const greetingShown = sessionStorage.getItem('greetingShown');
+        if (this.isMobile && !greetingShown) {
+          this.showAnimatedGreeting();
+        } else {
+          this.showGreeting = false;
+        }
+      });
+    }
   }
-}
 
   /**
    * Animates a greeting sequence for mobile devices.
@@ -191,11 +177,17 @@ private loadUserGreeting(): void {
    * Subscribes to task data and processes statistics and deadline information.
    */
   private loadAndProcessTasks(): void {
-    this.taskService.getTasks().subscribe((tasks: Task[]) => {
-      this.taskList = tasks;
-      this.setTaskCounts(tasks);
-      this.setNextDeadline(tasks);
-    });
+    // Vorherige Subscription beenden, falls vorhanden
+    if (this.taskSubscription) {
+      this.taskSubscription.unsubscribe();
+    }
+    this.taskSubscription = this.taskService
+      .getTasks()
+      .subscribe((tasks: Task[]) => {
+        this.taskList = tasks;
+        this.setTaskCounts(tasks);
+        this.setNextDeadline(tasks);
+      });
   }
 
   /**
@@ -277,5 +269,16 @@ private loadUserGreeting(): void {
     if (typeof date === 'string' || typeof date === 'number')
       return new Date(date);
     return null;
+  }
+
+  /**
+   * Angular lifecycle hook that is called when the SummaryComponent is destroyed.
+   * Cleans up the task subscription to prevent memory leaks and unwanted Firestore listeners.
+   */
+  ngOnDestroy(): void {
+    if (this.taskSubscription) {
+      this.taskSubscription.unsubscribe();
+    }
+    // console.log('SummaryComponent destroyed');
   }
 }

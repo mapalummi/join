@@ -15,7 +15,7 @@
  * - Angular Router for navigation
  */
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Output, Input } from '@angular/core';
+import { Component, EventEmitter, Output, Input, SimpleChanges, OnChanges, OnInit, OnDestroy } from '@angular/core';
 import { Task, TaskService } from '../../services/task.service';
 import { Subtask } from '../../services/task.service';
 import { Timestamp } from '@angular/fire/firestore';
@@ -23,6 +23,7 @@ import { ContactService } from '../../services/contact.service';
 import { Contact } from '../../services/contact.service';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-task-details',
@@ -30,7 +31,9 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './task-details.component.html',
   styleUrl: './task-details.component.scss',
 })
-export class TaskDetailsComponent {
+export class TaskDetailsComponent implements OnInit, OnDestroy, OnChanges {
+  private subtaskSubscription?: Subscription;
+
   /**
    * Emits an event when the task detail view should be closed.
    */
@@ -84,8 +87,16 @@ export class TaskDetailsComponent {
    * Lifecycle hook to load assigned contacts and subtasks on component initialization.
    */
   ngOnInit(): void {
-    this.loadAssignedContacts();
-    this.loadSubtasks();
+    // this.loadAssignedContacts();
+    // this.loadSubtasks();
+  }
+
+  // NEU
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['task'] && changes['task'].currentValue) {
+      this.loadAssignedContacts();
+      this.loadSubtasks();
+    }
   }
 
   /**
@@ -159,7 +170,11 @@ export class TaskDetailsComponent {
    */
   loadSubtasks() {
     if (this.task?.id) {
-      this.taskService
+      // Vorherige Subscription beenden, falls vorhanden
+      if (this.subtaskSubscription) {
+        this.subtaskSubscription.unsubscribe();
+      }
+      this.subtaskSubscription = this.taskService
         .getSubtasks(this.task.id)
         .subscribe((subtasks: Subtask[]) => {
           this.subtasks = subtasks;
@@ -172,14 +187,28 @@ export class TaskDetailsComponent {
    * and updates the contactList accordingly.
    */
   async loadAssignedContacts() {
-    if (this.task?.assignedTo?.length) {
-      this.contactList = [];
-      for (let contactId of this.task.assignedTo) {
-        const contact = await this.contactService.getContactById(contactId);
-        if (contact) {
-          this.contactList.push(contact);
-        }
+  // Task-ID merken, um Race Conditions zu vermeiden
+  const currentTaskId = this.task?.id;
+  this.contactList = [];
+  if (this.task?.assignedTo?.length) {
+    for (let contactId of this.task.assignedTo) {
+      const contact = await this.contactService.getContactById(contactId);
+      // Prüfen, ob Task-ID noch aktuell ist
+      if (contact && this.task?.id === currentTaskId) {
+        this.contactList.push(contact);
       }
     }
+  }
+}
+
+  /**
+   * Angular lifecycle hook that is called when the TaskDetailsComponent is destroyed.
+   * Cleans up the subtask subscription to prevent memory leaks and unwanted Firestore listeners.
+   */
+  ngOnDestroy(): void {
+    if (this.subtaskSubscription) {
+      this.subtaskSubscription.unsubscribe();
+    }
+    // console.log('TaskDetailsComponent destroyed');
   }
 }

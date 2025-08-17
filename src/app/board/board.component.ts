@@ -3,6 +3,8 @@ import {
   ViewEncapsulation,
   ViewChild,
   ElementRef,
+  OnDestroy,
+  OnInit,
 } from '@angular/core';
 import { TaskComponent } from './task/task.component';
 import {
@@ -93,8 +95,7 @@ import { OverlayManager } from './overlay-manager';
  * - Contact integration for assigning collaborators
  * - Responsive design (mobile / desktop behavior)
  */
-
-export class BoardComponent {
+export class BoardComponent implements OnInit, OnDestroy {
   searchTerm: string = '';
   unsubTask!: Subscription;
   unsubSubtask!: Subscription;
@@ -170,8 +171,10 @@ export class BoardComponent {
   constructor(
     private taskListManager: TaskListManager,
     private dragDropManager: DragDropManager,
-    private overlayManager: OverlayManager
-  ) { }
+    private overlayManager: OverlayManager,
+    private contactService: ContactService,
+    private taskService: TaskService
+  ) {}
 
   /**
    * Reference to the scrollable board section element.
@@ -216,12 +219,16 @@ export class BoardComponent {
     window.addEventListener('resize', () => {
       this.overlayManager.setAnimationDirection(window.innerWidth);
     });
+    // Kontakte direkt beim Initialisieren laden:
+    this.contactService.getContacts().subscribe((contacts) => {
+      this.contactList = contacts;
+    });
   }
 
   /**
    * Placeholder for handling user input in the search field.
    */
-  onSearchInput() { }
+  onSearchInput() {}
 
   /**
    * Filters tasks by given status and current search term (case-insensitive).
@@ -330,11 +337,11 @@ export class BoardComponent {
   }
 
   /**
-  * Returns the subtasks for a given task ID.
-  *
-  * @param taskId - The ID of the task to retrieve subtasks for.
-  * @returns Array of subtasks, or an empty array if none exist.
-  */
+   * Returns the subtasks for a given task ID.
+   *
+   * @param taskId - The ID of the task to retrieve subtasks for.
+   * @returns Array of subtasks, or an empty array if none exist.
+   */
   getSubtasksForTask(taskId: string | undefined): Subtask[] {
     return this.taskListManager.getSubtasksForTask(taskId);
   }
@@ -353,9 +360,9 @@ export class BoardComponent {
    *
    * @param contactList - Array of contact objects to store.
    */
-  getContactList(contactList: Contact[]) {
-    this.contactList = contactList;
-  }
+  // getContactList(contactList: Contact[]) {
+  //   this.contactList = contactList;
+  // }
 
   /**
    * Replaces the subtask list with a new array of updated subtasks.
@@ -397,5 +404,24 @@ export class BoardComponent {
    */
   onDragMoved(event: CdkDragMove) {
     this.dragDropManager.handleDragMove(event, this.scrollSection);
+  }
+
+  async handleTaskEdited(taskId: string) {
+  // Task-Liste neu laden, damit überall die aktuellen Daten sind
+  await this.taskListManager.loadTasks();
+  // Task nach Editieren frisch aus Firestore laden
+  const updatedTask = await this.taskService.getTaskById(taskId);
+  if (updatedTask) {
+    this.overlayManager.openTaskDetail(updatedTask);
+  }
+}
+
+  /**
+   * Angular lifecycle hook that is called when the BoardComponent is destroyed.
+   * Cleans up resources by destroying the TaskListManager and logs the destruction.
+   */
+  ngOnDestroy(): void {
+    this.taskListManager.destroy();
+    // console.log('BoardComponent destroyed');
   }
 }

@@ -109,19 +109,36 @@ export class OverlayManager {
    * @param event - Either 'open' or 'edit', indicating the action type.
    * @param status - The status to prefill in the add/edit task form.
    */
-  openAddOrEditOverlay(event: string, status: string): void {
-    const isSmallScreen = window.innerWidth < 1000;
-    if (event === 'open' || event === 'edit') {
-      if (isSmallScreen) {
-        this.resetOverlayState();
-        this.router.navigate(['/add-task'], { queryParams: { status } });
-      } else {
-        this.showTaskDetails = false;
-        this.showAddOrEditTask = true;
-        this.overlayVisible = true;
-      }
+  // openAddOrEditOverlay(event: string, status: string): void {
+  //   const isSmallScreen = window.innerWidth < 1000;
+  //   if (event === 'open' || event === 'edit') {
+  //     if (isSmallScreen) {
+  //       this.resetOverlayState();
+  //       this.router.navigate(['/add-task'], { queryParams: { status } });
+  //     } else {
+  //       this.showTaskDetails = false;
+  //       this.showAddOrEditTask = true;
+  //       this.overlayVisible = true;
+  //     }
+  //   }
+  // }
+
+  openAddOrEditOverlay(event: string, status: string, taskToEdit?: Task): void {
+  if (event === 'edit' && taskToEdit) {
+    this.taskService.setEditingTask(taskToEdit); // <-- HIER setzen!
+  }
+  const isSmallScreen = window.innerWidth < 1000;
+  if (event === 'open' || event === 'edit') {
+    if (isSmallScreen) {
+      this.resetOverlayState();
+      this.router.navigate(['/add-task'], { queryParams: { status } });
+    } else {
+      this.showTaskDetails = false;
+      this.showAddOrEditTask = true;
+      this.overlayVisible = true;
     }
   }
+}
 
   /**
    * Reset the overlay state.
