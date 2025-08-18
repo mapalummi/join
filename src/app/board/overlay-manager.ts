@@ -8,9 +8,8 @@ import { Task, TaskService } from '../services/task.service';
  * This includes opening/closing overlays, managing animation states, and handling responsive behavior.
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
-
 export class OverlayManager {
   private animationDirection: 'right' | 'bottom' = 'right';
   private backgroundVisible = false;
@@ -19,10 +18,7 @@ export class OverlayManager {
   private showAddOrEditTask: boolean = false;
   private selectedTask?: Task;
 
-  constructor(
-    private router: Router,
-    private taskService: TaskService
-  ) {}
+  constructor(private router: Router, private taskService: TaskService) {}
 
   /**
    * Gets the current animation direction
@@ -109,36 +105,22 @@ export class OverlayManager {
    * @param event - Either 'open' or 'edit', indicating the action type.
    * @param status - The status to prefill in the add/edit task form.
    */
-  // openAddOrEditOverlay(event: string, status: string): void {
-  //   const isSmallScreen = window.innerWidth < 1000;
-  //   if (event === 'open' || event === 'edit') {
-  //     if (isSmallScreen) {
-  //       this.resetOverlayState();
-  //       this.router.navigate(['/add-task'], { queryParams: { status } });
-  //     } else {
-  //       this.showTaskDetails = false;
-  //       this.showAddOrEditTask = true;
-  //       this.overlayVisible = true;
-  //     }
-  //   }
-  // }
-
   openAddOrEditOverlay(event: string, status: string, taskToEdit?: Task): void {
-  if (event === 'edit' && taskToEdit) {
-    this.taskService.setEditingTask(taskToEdit); // <-- HIER setzen!
-  }
-  const isSmallScreen = window.innerWidth < 1000;
-  if (event === 'open' || event === 'edit') {
-    if (isSmallScreen) {
-      this.resetOverlayState();
-      this.router.navigate(['/add-task'], { queryParams: { status } });
-    } else {
-      this.showTaskDetails = false;
-      this.showAddOrEditTask = true;
-      this.overlayVisible = true;
+    if (event === 'edit' && taskToEdit) {
+      this.taskService.setEditingTask(taskToEdit);
+    }
+    const isSmallScreen = window.innerWidth < 1000;
+    if (event === 'open' || event === 'edit') {
+      if (isSmallScreen) {
+        this.resetOverlayState();
+        this.router.navigate(['/add-task'], { queryParams: { status } });
+      } else {
+        this.showTaskDetails = false;
+        this.showAddOrEditTask = true;
+        this.overlayVisible = true;
+      }
     }
   }
-}
 
   /**
    * Reset the overlay state.
