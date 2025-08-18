@@ -3,22 +3,23 @@
     <div class="board-header">
       <div class="header-headline">
         <h1>Board</h1>
-        <img
-          class="add-icon"
-          src="assets/img/icons/add-box-fill.png"
-          alt="add task button"
-          (click)="openAddOrEditOverlay('open', 'to-do')"
-          (click)="saveTaskStatus('to-do')"
-        />
-        <img
-          class="add-icon-hover"
-          src="assets/img/icons/add-box-fill-hover.png"
-          alt="add task button"
-          (click)="openAddOrEditOverlay('open', 'to-do')"
-          (click)="saveTaskStatus('to-do')"
-        />
+        <div class="add-icon-container">
+          <img
+            class="add-icon"
+            src="assets/img/icons/add-box-fill.png"
+            alt="add task button"
+            (click)="openAddOrEditOverlay('open', 'to-do')"
+            (click)="saveTaskStatus('to-do')"
+          />
+          <img
+            class="add-icon-hover"
+            src="assets/img/icons/add-box-fill-hover.png"
+            alt="add task button"
+            (click)="openAddOrEditOverlay('open', 'to-do')"
+            (click)="saveTaskStatus('to-do')"
+          />
+        </div>
       </div>
-
       <div class="header-controls">
         <div class="search-input-container">
           <input
