@@ -15,10 +15,11 @@
   .add-icon {
     display: none;
     cursor: pointer;
+  }
 
-    &:hover {
-      transform: scale(1.1);
-    }
+  .add-icon-hover {
+    display: none;
+    cursor: pointer;
   }
 
   .header-controls {
@@ -152,12 +153,12 @@
         width: 38px;
         height: 38px;
         flex-shrink: 0;
+
+        
       }
     }
 
-    .add-icon {
-      display: unset;
-    }
+    
 
     .header-controls {
       > button {
