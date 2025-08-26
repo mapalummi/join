@@ -85,7 +85,6 @@ export class TaskService {
    */
   getTasksRef() {
     const collectionName = this.authService.getCollectionName('tasks');
-    // console.log('Tasks Collection:', collectionName); // DEBUG
     return collection(this.firestore, collectionName);
   }
 
